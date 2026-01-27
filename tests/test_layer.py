@@ -181,7 +181,7 @@ def test_qkeras_layer_not_built_error():
         # Try to call layer before building
         x = np.array([[0.5]])
         
-        with pytest.raises(Exception, match="Layer not built"):
+        with pytest.raises(RuntimeError, match="QKerasLayer must be built before calling"):
             layer.call(x)
     except ImportError:
         pytest.skip("Required dependencies not installed")
@@ -194,7 +194,59 @@ def test_qkeras_layer_draw_not_built_error():
         
         layer = QKerasLayer(layers=2, num_wires=1)
         
-        with pytest.raises(Exception, match="Layer not built"):
+        with pytest.raises(RuntimeError, match="QKerasLayer must be built before drawing"):
             layer.draw_qnode()
+    except ImportError:
+        pytest.skip("Required dependencies not installed")
+
+
+def test_qkeras_layer_invalid_layers():
+    """Test that invalid layers parameter raises ValueError."""
+    try:
+        from pennylane_keras_layer import QKerasLayer
+        
+        # Test negative layers
+        with pytest.raises(ValueError, match="layers must be a positive integer"):
+            QKerasLayer(layers=-1, num_wires=1)
+        
+        # Test zero layers
+        with pytest.raises(ValueError, match="layers must be a positive integer"):
+            QKerasLayer(layers=0, num_wires=1)
+        
+        # Test non-integer layers
+        with pytest.raises(ValueError, match="layers must be a positive integer"):
+            QKerasLayer(layers=2.5, num_wires=1)
+    except ImportError:
+        pytest.skip("Required dependencies not installed")
+
+
+def test_qkeras_layer_invalid_num_wires():
+    """Test that invalid num_wires parameter raises ValueError."""
+    try:
+        from pennylane_keras_layer import QKerasLayer
+        
+        # Test negative wires
+        with pytest.raises(ValueError, match="num_wires must be a positive integer"):
+            QKerasLayer(layers=2, num_wires=-1)
+        
+        # Test zero wires
+        with pytest.raises(ValueError, match="num_wires must be a positive integer"):
+            QKerasLayer(layers=2, num_wires=0)
+    except ImportError:
+        pytest.skip("Required dependencies not installed")
+
+
+def test_qkeras_layer_invalid_scaling():
+    """Test that invalid scaling parameter raises ValueError."""
+    try:
+        from pennylane_keras_layer import QKerasLayer
+        
+        # Test negative scaling
+        with pytest.raises(ValueError, match="scaling must be a positive number"):
+            QKerasLayer(layers=2, num_wires=1, scaling=-1.0)
+        
+        # Test zero scaling
+        with pytest.raises(ValueError, match="scaling must be a positive number"):
+            QKerasLayer(layers=2, num_wires=1, scaling=0)
     except ImportError:
         pytest.skip("Required dependencies not installed")

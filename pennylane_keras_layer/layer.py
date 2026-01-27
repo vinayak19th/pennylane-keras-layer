@@ -58,26 +58,41 @@ class QKerasLayer(keras.layers.Layer):
         """Initialize the QKerasLayer."""
         super().__init__(**kwargs)  # Passing the keyword arguments to the parent class
         
+        # Input validation
+        if not isinstance(layers, int) or layers <= 0:
+            raise ValueError(f"layers must be a positive integer, got {layers}")
+        if not isinstance(num_wires, int) or num_wires <= 0:
+            raise ValueError(f"num_wires must be a positive integer, got {num_wires}")
+        if not isinstance(scaling, (int, float)) or scaling <= 0:
+            raise ValueError(f"scaling must be a positive number, got {scaling}")
+        
         # Defining the circuit parameters
         self.layers = layers
         self.scaling = scaling
         self.circ_backend = circ_backend
         self.circ_grad_method = circ_grad_method
         self.num_wires = num_wires
+        self.use_jax_python = use_jax_python
         
         # Define Keras Layer flags
         self.is_built: bool = False
         
         # Selecting the Pennylane interface based on keras backend
-        if keras.config.backend() == "torch":
+        backend = keras.config.backend()
+        if backend == "torch":
             self.interface = "torch"
-        elif keras.config.backend() == "tensorflow":
+        elif backend == "tensorflow":
             self.interface = "tf"
-        elif keras.config.backend() == "jax":
+        elif backend == "jax":
             if use_jax_python:
                 self.interface = "jax-python"
             else:
                 self.interface = "jax"
+        else:
+            raise ValueError(
+                f"Unsupported Keras backend: {backend}. "
+                f"Supported backends are: 'torch', 'tensorflow', 'jax'"
+            )
     
     def build(self, input_shape):
         """Initialize the layer weights based on input_shape.
@@ -86,7 +101,8 @@ class QKerasLayer(keras.layers.Layer):
             input_shape (tuple): The shape of the input
         """
         # Save input_shape without batch to be used later for the draw_circuit function
-        self.input_shape = input_shape[1:]
+        # Using a different name to avoid shadowing parent class attribute
+        self._circuit_input_shape = input_shape[1:]
         
         # Initialize weights in the same way as the numpy array in the previous section.
         # Randomly initialize weights to uniform distribution in the a range of [0,2pi)
@@ -117,8 +133,10 @@ class QKerasLayer(keras.layers.Layer):
         """
         return (input_shape[0], self.num_wires)
 
-    def S(self, x):
+    def data_encoding_block(self, x):
         """Data-encoding circuit block.
+        
+        Note: Current implementation operates on wire 0 only.
         
         Args:
             x: Input data (expects batch dimension)
@@ -126,8 +144,8 @@ class QKerasLayer(keras.layers.Layer):
         # Use the [:,0] syntax for batch support
         qml.RX(x[:, 0], wires=0)
     
-    def W(self, theta):
-        """Trainable circuit block.
+    def trainable_rotation_block(self, theta):
+        """Trainable circuit block with parametrized rotations.
         
         Args:
             theta: Weight parameters for the rotation gate
@@ -140,6 +158,9 @@ class QKerasLayer(keras.layers.Layer):
         This method defines the quantum circuit architecture without 
         the qml.qnode decorator.
         
+        Note: Current implementation operates on wire 0 only, regardless
+        of the num_wires parameter.
+        
         Args:
             weights: Trainable weights for the quantum circuit
             x: Input data
@@ -148,44 +169,37 @@ class QKerasLayer(keras.layers.Layer):
             Expectation value of PauliZ measurement
         """
         for theta in weights[:-1]:
-            self.W(theta)
-            self.S(x)
+            self.trainable_rotation_block(theta)
+            self.data_encoding_block(x)
         
         # (L+1)'th unitary
-        self.W(weights[-1])
+        self.trainable_rotation_block(weights[-1])
         return qml.expval(qml.PauliZ(wires=0))
     
     def create_circuit(self):
         """Create the PennyLane device and QNode.
         
-        For JAX backend, the circuit is wrapped in jax.jit for performance.
+        For JAX backend (non-python), creates the device and QNode once,
+        then wraps only the execution in jax.jit for performance.
         
         Returns:
-            Callable: PennyLane QNode or JIT-compiled function
+            Callable: PennyLane QNode or JIT-compiled wrapper
         """
+        # Create device once (outside JIT boundary for efficiency)
+        dev = qml.device(self.circ_backend, wires=self.num_wires)
+        circuit_node = qml.QNode(
+            self.serial_quantum_model,
+            dev,
+            diff_method=self.circ_grad_method,
+            interface=self.interface
+        )
+        
         if self.interface == "jax":
             import jax
-            
-            @jax.jit
-            def create_circuit_jax_jit(layer_weights, x):
-                dev = qml.device(self.circ_backend, wires=self.num_wires)
-                circuit_node = qml.QNode(
-                    self.serial_quantum_model,
-                    dev,
-                    diff_method=self.circ_grad_method,
-                    interface=self.interface
-                )
-                return circuit_node(layer_weights, x)
-            
-            return create_circuit_jax_jit
+            # JIT compile only the circuit execution, not device creation
+            return jax.jit(circuit_node)
         else:
-            dev = qml.device(self.circ_backend, wires=self.num_wires)
-            return qml.QNode(
-                self.serial_quantum_model,
-                dev,
-                diff_method=self.circ_grad_method,
-                interface=self.interface
-            )
+            return circuit_node
     
     def call(self, inputs):
         """Define the forward pass of the layer.
@@ -201,7 +215,10 @@ class QKerasLayer(keras.layers.Layer):
         """
         # We need to prevent the layer from being called before the weights and circuit are built
         if not self.is_built:
-            raise Exception("Layer not built") from None
+            raise RuntimeError(
+                "QKerasLayer must be built before calling. "
+                "Ensure the layer is connected in a model or call layer.build(input_shape) explicitly."
+            )
         
         # We multiply the input with the scaling factor outside the circuit for optimized vector execution.
         x = ops.multiply(self.scaling, inputs)
@@ -219,14 +236,17 @@ class QKerasLayer(keras.layers.Layer):
         Creates a visualization of the quantum circuit with random input.
         
         Raises:
-            Exception: If layer is called before being built
+            RuntimeError: If layer is called before being built
         """
         # We want to raise an exception if this function is called before our QNode is created
         if not self.is_built:
-            raise Exception("Layer not built") from None
+            raise RuntimeError(
+                "QKerasLayer must be built before drawing. "
+                "Ensure the layer is connected in a model or call layer.build(input_shape) explicitly."
+            )
         
         # Create a random input using the input_shape defined earlier with a single batch dim
-        x = ops.expand_dims(keras.random.uniform(shape=self.input_shape), 0)
+        x = ops.expand_dims(keras.random.uniform(shape=self._circuit_input_shape), 0)
         qml.draw_mpl(self.circuit)(self.layer_weights.numpy(), x)
 
     def get_config(self):
@@ -245,6 +265,7 @@ class QKerasLayer(keras.layers.Layer):
             "circ_backend": serialize_keras_object(self.circ_backend),
             "circ_grad_method": serialize_keras_object(self.circ_grad_method),
             "num_wires": serialize_keras_object(self.num_wires),
+            "use_jax_python": serialize_keras_object(self.use_jax_python),
         }
         return {**base_config, **config}
 
@@ -264,6 +285,7 @@ class QKerasLayer(keras.layers.Layer):
         circ_backend = deserialize_keras_object(config.pop("circ_backend"))
         circ_grad_method = deserialize_keras_object(config.pop("circ_grad_method"))
         num_wires = deserialize_keras_object(config.pop("num_wires"))
+        use_jax_python = deserialize_keras_object(config.pop("use_jax_python", False))
         
         # Call the init function of the layer from the config
         return cls(
@@ -272,5 +294,6 @@ class QKerasLayer(keras.layers.Layer):
             circ_backend=circ_backend,
             circ_grad_method=circ_grad_method,
             num_wires=num_wires,
+            use_jax_python=use_jax_python,
             **config
         )

@@ -23,7 +23,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Set Keras backend (can be 'jax', 'tensorflow', or 'torch')
+# Set Keras backend BEFORE importing keras (can be 'jax', 'tensorflow', or 'torch')
 os.environ["KERAS_BACKEND"] = "jax"  # Change to your preferred backend
 
 import keras
