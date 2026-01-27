@@ -65,7 +65,15 @@ pytest tests/test_layer.py -v
 
 # Run only integration tests
 pytest tests/ -m integration
+
+# Run tests with specific backend
+pytest tests/ --backend=tensorflow  # or torch, or jax
 ```
+
+**Testing with different backends:**
+- TensorFlow: `pytest tests/ --backend=tensorflow` (requires `pip install tensorflow`)
+- PyTorch: `pytest tests/ --backend=torch` (requires `pip install torch`)
+- JAX: `pytest tests/ --backend=jax` (requires `pip install jax jaxlib`)
 
 See [tests/README.md](tests/README.md) for detailed information about the test suite.
 
