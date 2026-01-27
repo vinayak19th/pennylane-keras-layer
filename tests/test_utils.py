@@ -25,24 +25,24 @@ def test_package_exports():
     # Check __all__ is defined
     assert hasattr(pennylane_keras_layer, '__all__')
     
-    # Check QKerasLayer is exported
-    assert 'QKerasLayer' in pennylane_keras_layer.__all__
+    # Check KerasCircuitLayer is exported
+    assert 'KerasCircuitLayer' in pennylane_keras_layer.__all__
     
-    # Check QKerasLayer is accessible
-    assert hasattr(pennylane_keras_layer, 'QKerasLayer')
+    # Check KerasCircuitLayer is accessible
+    assert hasattr(pennylane_keras_layer, 'KerasCircuitLayer')
 
 
-def test_qkeras_layer_module():
+def test_pennylanekeras_layer_module():
     """Test that the layer module exists and is importable."""
     from pennylane_keras_layer import layer
     assert layer is not None
 
 
-def test_qkeras_layer_class_exists():
-    """Test that QKerasLayer class exists in the layer module."""
-    from pennylane_keras_layer.layer import QKerasLayer
-    assert QKerasLayer is not None
-    assert callable(QKerasLayer)
+def test_pennylanekeras_layer_class_exists():
+    """Test that KerasCircuitLayer class exists in the layer module."""
+    from pennylane_keras_layer.layer import KerasCircuitLayer
+    assert KerasCircuitLayer is not None
+    assert callable(KerasCircuitLayer)
 
 
 def test_package_structure():
@@ -62,21 +62,21 @@ def test_package_structure():
 
 
 def test_import_from_package():
-    """Test different ways to import QKerasLayer."""
+    """Test different ways to import KerasCircuitLayer."""
     # Method 1: Direct import
-    from pennylane_keras_layer import QKerasLayer
-    assert QKerasLayer is not None
+    from pennylane_keras_layer import KerasCircuitLayer
+    assert KerasCircuitLayer is not None
     
     # Method 2: Module import
     import pennylane_keras_layer
-    assert hasattr(pennylane_keras_layer, 'QKerasLayer')
+    assert hasattr(pennylane_keras_layer, 'KerasCircuitLayer')
     
     # Method 3: From layer module
-    from pennylane_keras_layer.layer import QKerasLayer as QKL
+    from pennylane_keras_layer.layer import KerasCircuitLayer as QKL
     assert QKL is not None
     
     # All should reference the same class
     import pennylane_keras_layer
-    from pennylane_keras_layer.layer import QKerasLayer as QKL2
-    assert pennylane_keras_layer.QKerasLayer is QKL
+    from pennylane_keras_layer.layer import KerasCircuitLayer as QKL2
+    assert pennylane_keras_layer.KerasCircuitLayer is QKL
     assert QKL is QKL2

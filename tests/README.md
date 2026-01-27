@@ -9,7 +9,7 @@ tests/
 ├── __init__.py              # Test package initialization
 ├── conftest.py              # Pytest configuration and fixtures
 ├── test_basic.py            # Basic import and dependency tests
-├── test_layer.py            # Unit tests for QKerasLayer
+├── test_layer.py            # Unit tests for KerasCircuitLayer
 ├── test_integration.py      # Integration tests (model training, saving, etc.)
 ├── test_edge_cases.py       # Edge cases and parametric tests
 └── test_utils.py            # Utility and package structure tests
@@ -22,7 +22,7 @@ tests/
 - Dependency availability checks (PennyLane, Keras)
 
 ### Layer Tests (`test_layer.py`)
-- QKerasLayer initialization
+- KerasCircuitLayer initialization
 - Layer building and weight creation
 - Forward pass functionality
 - Serialization/deserialization
@@ -67,7 +67,7 @@ pytest tests/test_layer.py
 
 ### Run specific test function
 ```bash
-pytest tests/test_layer.py::test_qkeras_layer_initialization
+pytest tests/test_layer.py::test_pennylanekeras_layer_initialization
 ```
 
 ### Run tests with coverage
@@ -135,10 +135,10 @@ When adding new tests:
 def test_feature_name():
     """Test that feature works correctly."""
     try:
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Setup
-        layer = QKerasLayer(layers=2, num_wires=1)
+        layer = KerasCircuitLayer(layers=2, num_wires=1)
         
         # Exercise
         result = layer.some_method()

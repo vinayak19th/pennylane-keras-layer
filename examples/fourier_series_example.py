@@ -2,13 +2,13 @@
 Fourier Series Approximation with Quantum Circuits
 ===================================================
 
-This example demonstrates how to use QKerasLayer to approximate a truncated 
+This example demonstrates how to use KerasCircuitLayer to approximate a truncated 
 Fourier series using a Data Re-Uploading quantum model. This is based on the
 'Quantum models as Fourier series' demo.
 
 The example shows:
 1. Creating a target function (truncated Fourier series)
-2. Building a quantum model with QKerasLayer
+2. Building a quantum model with KerasCircuitLayer
 3. Training the model to fit the target function
 4. Saving and loading the trained model
 
@@ -40,7 +40,7 @@ print(f"Using Keras backend: {keras.backend.backend()}")
 
 # Import PennyLane and our custom layer
 import pennylane as qml
-from pennylane_keras_layer import QKerasLayer
+from pennylane_keras_layer import KerasCircuitLayer
 
 
 # Define the target function
@@ -105,7 +105,7 @@ def main():
     print("\nBuilding quantum model...")
     layers = 2  # Number of quantum layers
     
-    q_layer = QKerasLayer(
+    q_layer = KerasCircuitLayer(
         layers=layers,
         scaling=scaling,
         circ_backend="default.qubit",

@@ -13,6 +13,6 @@ __version__ = "0.1.0"
 __author__ = "Vinayak"
 
 # Import main components
-from pennylane_keras_layer.layer import QKerasLayer
+from pennylane_keras_layer.layer import KerasCircuitLayer
 
-__all__ = ["QKerasLayer"]
+__all__ = ["KerasCircuitLayer"]

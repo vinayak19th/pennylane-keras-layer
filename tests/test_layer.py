@@ -1,21 +1,21 @@
-"""Tests for the QKerasLayer implementation."""
+"""Tests for the KerasCircuitLayer implementation."""
 
 import pytest
 import numpy as np
 
 
-def test_qkeras_layer_import():
-    """Test that QKerasLayer can be imported."""
-    from pennylane_keras_layer import QKerasLayer
-    assert QKerasLayer is not None
+def test_pennylanekeras_layer_import():
+    """Test that KerasCircuitLayer can be imported."""
+    from pennylane_keras_layer import KerasCircuitLayer
+    assert KerasCircuitLayer is not None
 
 
-def test_qkeras_layer_initialization():
-    """Test QKerasLayer initialization with default parameters."""
+def test_pennylanekeras_layer_initialization():
+    """Test KerasCircuitLayer initialization with default parameters."""
     try:
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
-        layer = QKerasLayer(layers=2, num_wires=1)
+        layer = KerasCircuitLayer(layers=2, num_wires=1)
         assert layer.layers == 2
         assert layer.num_wires == 1
         assert layer.scaling == 1.0
@@ -25,12 +25,12 @@ def test_qkeras_layer_initialization():
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_custom_parameters():
-    """Test QKerasLayer with custom parameters."""
+def test_pennylanekeras_layer_custom_parameters():
+    """Test KerasCircuitLayer with custom parameters."""
     try:
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
-        layer = QKerasLayer(
+        layer = KerasCircuitLayer(
             layers=3,
             scaling=2.0,
             circ_backend="default.qubit",
@@ -46,13 +46,13 @@ def test_qkeras_layer_custom_parameters():
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_build():
-    """Test that QKerasLayer builds correctly."""
+def test_pennylanekeras_layer_build():
+    """Test that KerasCircuitLayer builds correctly."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
-        layer = QKerasLayer(layers=2, num_wires=1)
+        layer = KerasCircuitLayer(layers=2, num_wires=1)
         
         # Build the layer with input shape
         layer.build(input_shape=(None, 1))
@@ -65,20 +65,20 @@ def test_qkeras_layer_build():
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_in_model():
-    """Test QKerasLayer integration in a Keras model."""
+def test_pennylanekeras_layer_in_model():
+    """Test KerasCircuitLayer integration in a Keras model."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Create a simple model
         inp = keras.layers.Input(shape=(1,))
-        q_layer = QKerasLayer(layers=2, num_wires=1, circ_backend="default.qubit")
+        q_layer = KerasCircuitLayer(layers=2, num_wires=1, circ_backend="default.qubit")
         out = q_layer(inp)
         model = keras.models.Model(inputs=inp, outputs=out)
         
         assert model is not None
-        assert len(model.layers) == 2  # Input + QKerasLayer
+        assert len(model.layers) == 2  # Input + KerasCircuitLayer
         
         # Test model summary doesn't raise errors
         try:
@@ -89,16 +89,16 @@ def test_qkeras_layer_in_model():
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_forward_pass():
-    """Test QKerasLayer forward pass with dummy data."""
+def test_pennylanekeras_layer_forward_pass():
+    """Test KerasCircuitLayer forward pass with dummy data."""
     try:
         import keras
         import numpy as np
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Create model
         inp = keras.layers.Input(shape=(1,))
-        q_layer = QKerasLayer(layers=1, num_wires=1, circ_backend="default.qubit")
+        q_layer = KerasCircuitLayer(layers=1, num_wires=1, circ_backend="default.qubit")
         out = q_layer(inp)
         model = keras.models.Model(inputs=inp, outputs=out)
         
@@ -118,14 +118,14 @@ def test_qkeras_layer_forward_pass():
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_serialization():
-    """Test QKerasLayer serialization and deserialization."""
+def test_pennylanekeras_layer_serialization():
+    """Test KerasCircuitLayer serialization and deserialization."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Create layer
-        layer = QKerasLayer(
+        layer = KerasCircuitLayer(
             layers=2,
             scaling=1.5,
             circ_backend="default.qubit",
@@ -143,7 +143,7 @@ def test_qkeras_layer_serialization():
         assert "num_wires" in config
         
         # Recreate from config
-        new_layer = QKerasLayer.from_config(config)
+        new_layer = KerasCircuitLayer.from_config(config)
         
         assert new_layer.layers == layer.layers
         assert new_layer.scaling == layer.scaling
@@ -153,12 +153,12 @@ def test_qkeras_layer_serialization():
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_compute_output_shape():
-    """Test QKerasLayer output shape computation."""
+def test_pennylanekeras_layer_compute_output_shape():
+    """Test KerasCircuitLayer output shape computation."""
     try:
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
-        layer = QKerasLayer(layers=2, num_wires=3)
+        layer = KerasCircuitLayer(layers=2, num_wires=3)
         
         # Test output shape computation
         input_shape = (32, 1)  # (batch_size, features)
@@ -169,84 +169,84 @@ def test_qkeras_layer_compute_output_shape():
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_not_built_error():
+def test_pennylanekeras_layer_not_built_error():
     """Test that calling layer before building raises an error."""
     try:
         import keras
         import numpy as np
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
-        layer = QKerasLayer(layers=2, num_wires=1)
+        layer = KerasCircuitLayer(layers=2, num_wires=1)
         
         # Try to call layer before building
         x = np.array([[0.5]])
         
-        with pytest.raises(RuntimeError, match="QKerasLayer must be built before calling"):
+        with pytest.raises(RuntimeError, match="KerasCircuitLayer must be built before calling"):
             layer.call(x)
     except ImportError:
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_draw_not_built_error():
+def test_pennylanekeras_layer_draw_not_built_error():
     """Test that drawing circuit before building raises an error."""
     try:
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
-        layer = QKerasLayer(layers=2, num_wires=1)
+        layer = KerasCircuitLayer(layers=2, num_wires=1)
         
-        with pytest.raises(RuntimeError, match="QKerasLayer must be built before drawing"):
+        with pytest.raises(RuntimeError, match="KerasCircuitLayer must be built before drawing"):
             layer.draw_qnode()
     except ImportError:
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_invalid_layers():
+def test_pennylanekeras_layer_invalid_layers():
     """Test that invalid layers parameter raises ValueError."""
     try:
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Test negative layers
         with pytest.raises(ValueError, match="layers must be a positive integer"):
-            QKerasLayer(layers=-1, num_wires=1)
+            KerasCircuitLayer(layers=-1, num_wires=1)
         
         # Test zero layers
         with pytest.raises(ValueError, match="layers must be a positive integer"):
-            QKerasLayer(layers=0, num_wires=1)
+            KerasCircuitLayer(layers=0, num_wires=1)
         
         # Test non-integer layers
         with pytest.raises(ValueError, match="layers must be a positive integer"):
-            QKerasLayer(layers=2.5, num_wires=1)
+            KerasCircuitLayer(layers=2.5, num_wires=1)
     except ImportError:
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_invalid_num_wires():
+def test_pennylanekeras_layer_invalid_num_wires():
     """Test that invalid num_wires parameter raises ValueError."""
     try:
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Test negative wires
         with pytest.raises(ValueError, match="num_wires must be a positive integer"):
-            QKerasLayer(layers=2, num_wires=-1)
+            KerasCircuitLayer(layers=2, num_wires=-1)
         
         # Test zero wires
         with pytest.raises(ValueError, match="num_wires must be a positive integer"):
-            QKerasLayer(layers=2, num_wires=0)
+            KerasCircuitLayer(layers=2, num_wires=0)
     except ImportError:
         pytest.skip("Required dependencies not installed")
 
 
-def test_qkeras_layer_invalid_scaling():
+def test_pennylanekeras_layer_invalid_scaling():
     """Test that invalid scaling parameter raises ValueError."""
     try:
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Test negative scaling
         with pytest.raises(ValueError, match="scaling must be a positive number"):
-            QKerasLayer(layers=2, num_wires=1, scaling=-1.0)
+            KerasCircuitLayer(layers=2, num_wires=1, scaling=-1.0)
         
         # Test zero scaling
         with pytest.raises(ValueError, match="scaling must be a positive number"):
-            QKerasLayer(layers=2, num_wires=1, scaling=0)
+            KerasCircuitLayer(layers=2, num_wires=1, scaling=0)
     except ImportError:
         pytest.skip("Required dependencies not installed")

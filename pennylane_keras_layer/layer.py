@@ -1,7 +1,7 @@
 """
 Keras Layer implementation for PennyLane quantum circuits.
 
-This module provides the QKerasLayer class that wraps PennyLane QNodes
+This module provides the KerasCircuitLayer class that wraps PennyLane QNodes
 as Keras layers, enabling quantum circuits in neural networks with full
 multi-backend support (TensorFlow, JAX, PyTorch).
 """
@@ -14,8 +14,8 @@ import pennylane as qml
 import numpy as np
 
 
-@register_keras_serializable(package="QKeras", name="QKerasLayer")
-class QKerasLayer(keras.layers.Layer):
+@register_keras_serializable(package="PennylaneKeras", name="KerasCircuitLayer")
+class KerasCircuitLayer(keras.layers.Layer):
     """A Keras Layer wrapping a PennyLane Q-Node.
     
     This layer implements a Data Re-Uploading quantum machine learning model
@@ -34,10 +34,10 @@ class QKerasLayer(keras.layers.Layer):
     
     Example:
         >>> import keras
-        >>> from pennylane_keras_layer import QKerasLayer
+        >>> from pennylane_keras_layer import KerasCircuitLayer
         >>> 
         >>> # Create a quantum layer
-        >>> q_layer = QKerasLayer(layers=2, scaling=1.0, num_wires=1)
+        >>> q_layer = KerasCircuitLayer(layers=2, scaling=1.0, num_wires=1)
         >>> 
         >>> # Build a model
         >>> inp = keras.layers.Input(shape=(1,))
@@ -55,7 +55,7 @@ class QKerasLayer(keras.layers.Layer):
         use_jax_python: bool = False,
         **kwargs
     ):
-        """Initialize the QKerasLayer."""
+        """Initialize the KerasCircuitLayer."""
         super().__init__(**kwargs)  # Passing the keyword arguments to the parent class
         
         # Input validation
@@ -216,7 +216,7 @@ class QKerasLayer(keras.layers.Layer):
         # We need to prevent the layer from being called before the weights and circuit are built
         if not self.is_built:
             raise RuntimeError(
-                "QKerasLayer must be built before calling. "
+                "KerasCircuitLayer must be built before calling. "
                 "Ensure the layer is connected in a model or call layer.build(input_shape) explicitly."
             )
         
@@ -230,24 +230,25 @@ class QKerasLayer(keras.layers.Layer):
             out = self.circuit(self.layer_weights, x)
         return out
 
-    def draw_qnode(self):
+    def draw_qnode(self, **kwargs):
         """Draw the layer circuit.
         
         Creates a visualization of the quantum circuit with random input.
-        
+        Args:
+            inputs: Supports all the kwargs for the pennylane 'draw_mpl' method. see: https://docs.pennylane.ai/en/stable/code/api/pennylane.draw_mpl.html
         Raises:
             RuntimeError: If layer is called before being built
         """
         # We want to raise an exception if this function is called before our QNode is created
         if not self.is_built:
             raise RuntimeError(
-                "QKerasLayer must be built before drawing. "
+                "KerasCircuitLayer must be built before drawing. "
                 "Ensure the layer is connected in a model or call layer.build(input_shape) explicitly."
             )
         
         # Create a random input using the input_shape defined earlier with a single batch dim
         x = ops.expand_dims(keras.random.uniform(shape=self._circuit_input_shape), 0)
-        qml.draw_mpl(self.circuit)(self.layer_weights.numpy(), x)
+        qml.draw_mpl(self.circuit,**kwargs)(self.layer_weights.numpy(), x)
 
     def get_config(self):
         """Create layer config for layer saving.
@@ -256,7 +257,7 @@ class QKerasLayer(keras.layers.Layer):
             dict: Configuration dictionary
         """
         # Load the basic config parameters of the keras.layer parent class
-        base_config = super(QKerasLayer, self).get_config()
+        base_config = super(KerasCircuitLayer, self).get_config()
         
         # Create a custom configuration for the instance variables unique to the QNode
         config = {
@@ -277,7 +278,7 @@ class QKerasLayer(keras.layers.Layer):
             config (dict): Configuration dictionary
             
         Returns:
-            QKerasLayer: New instance of the layer
+            KerasCircuitLayer: New instance of the layer
         """
         # The cls argument is the specific layer config and the config object contains general keras.layer arguments
         layers = deserialize_keras_object(config.pop("layers"))

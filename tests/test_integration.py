@@ -1,4 +1,4 @@
-"""Integration tests for QKerasLayer with different Keras backends."""
+"""Integration tests for KerasCircuitLayer with different Keras backends."""
 
 import pytest
 import numpy as np
@@ -15,16 +15,16 @@ def sample_data():
 
 @pytest.mark.integration
 def test_model_training_basic(sample_data):
-    """Test basic model training with QKerasLayer."""
+    """Test basic model training with KerasCircuitLayer."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         x_train, y_train = sample_data
         
         # Build model
         inp = keras.layers.Input(shape=(1,))
-        q_layer = QKerasLayer(layers=1, num_wires=1, circ_backend="default.qubit")
+        q_layer = KerasCircuitLayer(layers=1, num_wires=1, circ_backend="default.qubit")
         out = q_layer(inp)
         model = keras.models.Model(inputs=inp, outputs=out)
         
@@ -50,16 +50,16 @@ def test_model_training_basic(sample_data):
 
 @pytest.mark.integration
 def test_model_save_and_load(sample_data, tmp_path):
-    """Test saving and loading a model with QKerasLayer."""
+    """Test saving and loading a model with KerasCircuitLayer."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         x_train, _ = sample_data
         
         # Build model
         inp = keras.layers.Input(shape=(1,))
-        q_layer = QKerasLayer(layers=2, num_wires=1, circ_backend="default.qubit")
+        q_layer = KerasCircuitLayer(layers=2, num_wires=1, circ_backend="default.qubit")
         out = q_layer(inp)
         model = keras.models.Model(inputs=inp, outputs=out)
         
@@ -88,17 +88,17 @@ def test_model_save_and_load(sample_data, tmp_path):
 
 @pytest.mark.integration
 def test_model_with_multiple_layers(sample_data):
-    """Test model with QKerasLayer and other Keras layers."""
+    """Test model with KerasCircuitLayer and other Keras layers."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         x_train, y_train = sample_data
         
         # Build model with multiple layers
         inp = keras.layers.Input(shape=(1,))
         dense1 = keras.layers.Dense(4, activation='relu')(inp)
-        q_layer = QKerasLayer(layers=1, num_wires=1, circ_backend="default.qubit")(dense1[:, 0:1])
+        q_layer = KerasCircuitLayer(layers=1, num_wires=1, circ_backend="default.qubit")(dense1[:, 0:1])
         dense2 = keras.layers.Dense(1)(q_layer)
         model = keras.models.Model(inputs=inp, outputs=dense2)
         
@@ -122,11 +122,11 @@ def test_model_prediction_range():
     """Test that model predictions are in valid expectation value range."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Create model
         inp = keras.layers.Input(shape=(1,))
-        q_layer = QKerasLayer(layers=2, num_wires=1, circ_backend="default.qubit")
+        q_layer = KerasCircuitLayer(layers=2, num_wires=1, circ_backend="default.qubit")
         out = q_layer(inp)
         model = keras.models.Model(inputs=inp, outputs=out)
         
@@ -147,11 +147,11 @@ def test_batch_processing():
     """Test that layer handles different batch sizes correctly."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Create model
         inp = keras.layers.Input(shape=(1,))
-        q_layer = QKerasLayer(layers=1, num_wires=1, circ_backend="default.qubit")
+        q_layer = KerasCircuitLayer(layers=1, num_wires=1, circ_backend="default.qubit")
         out = q_layer(inp)
         model = keras.models.Model(inputs=inp, outputs=out)
         
@@ -170,11 +170,11 @@ def test_gradient_flow():
     """Test that gradients flow through the quantum layer."""
     try:
         import keras
-        from pennylane_keras_layer import QKerasLayer
+        from pennylane_keras_layer import KerasCircuitLayer
         
         # Create model
         inp = keras.layers.Input(shape=(1,))
-        q_layer = QKerasLayer(layers=1, num_wires=1, circ_backend="default.qubit")
+        q_layer = KerasCircuitLayer(layers=1, num_wires=1, circ_backend="default.qubit")
         out = q_layer(inp)
         model = keras.models.Model(inputs=inp, outputs=out)
         
