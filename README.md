@@ -51,9 +51,23 @@ python examples/basic_example.py
 
 ### Running tests
 
+The package includes a comprehensive test suite in the `tests/` directory:
+
 ```bash
+# Run all tests
 pytest tests/
+
+# Run with coverage
+pytest tests/ --cov=pennylane_keras_layer --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_layer.py -v
+
+# Run only integration tests
+pytest tests/ -m integration
 ```
+
+See [tests/README.md](tests/README.md) for detailed information about the test suite.
 
 ### Code formatting
 

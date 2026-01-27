@@ -12,4 +12,7 @@ framework and Keras 3, enabling quantum layers in neural networks.
 __version__ = "0.1.0"
 __author__ = "Vinayak"
 
-# Main package imports will be added here as modules are developed
+# Import main components
+from pennylane_keras_layer.layer import QKerasLayer
+
+__all__ = ["QKerasLayer"]
