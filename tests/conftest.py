@@ -2,6 +2,18 @@
 
 import pytest
 import sys
+import os
+
+
+def pytest_addoption(parser):
+    """Add custom command line options to pytest."""
+    parser.addoption(
+        "--backend",
+        action="store",
+        default=None,
+        choices=["tensorflow", "torch", "jax"],
+        help="Select Keras backend for testing: tensorflow, torch, or jax"
+    )
 
 
 def pytest_configure(config):
@@ -15,6 +27,26 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "backend(name): mark test to run with specific backend"
     )
+    
+    # Set the Keras backend based on command line option
+    backend = config.getoption("--backend")
+    if backend:
+        os.environ["KERAS_BACKEND"] = backend
+        print(f"\n=== Setting Keras backend to: {backend} ===")
+        
+        # Validate that the backend is available
+        try:
+            if backend == "tensorflow":
+                import tensorflow  # noqa: F401
+            elif backend == "torch":
+                import torch  # noqa: F401
+            elif backend == "jax":
+                import jax  # noqa: F401
+        except ImportError:
+            pytest.exit(
+                f"Backend '{backend}' selected but required package not installed. "
+                f"Install it with: pip install {backend}"
+            )
 
 
 def pytest_collection_modifyitems(config, items):

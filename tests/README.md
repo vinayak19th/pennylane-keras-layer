@@ -85,6 +85,25 @@ pytest tests/ -m integration
 pytest tests/ -m "not slow"
 ```
 
+### Run tests with specific backend
+```bash
+# Test with TensorFlow backend
+pytest tests/ --backend=tensorflow
+
+# Test with PyTorch backend
+pytest tests/ --backend=torch
+
+# Test with JAX backend
+pytest tests/ --backend=jax
+```
+
+**Note**: If you specify a backend with `--backend`, the corresponding package must be installed:
+- For `--backend=tensorflow`: Install with `pip install tensorflow`
+- For `--backend=torch`: Install with `pip install torch`
+- For `--backend=jax`: Install with `pip install jax jaxlib`
+
+If no backend is specified, pytest will use the backend set by the `KERAS_BACKEND` environment variable, or Keras 3's default backend.
+
 ## Test Markers
 
 - `@pytest.mark.integration` - Integration tests (may be slower)
@@ -152,7 +171,16 @@ These tests are designed to run in CI/CD pipelines. They handle missing dependen
 
 ### Backend-specific failures
 - Some tests may only work with specific Keras backends (TensorFlow, JAX, PyTorch)
-- Set backend with: `export KERAS_BACKEND=jax`
+- Set backend with environment variable: `export KERAS_BACKEND=jax`
+- Or use the pytest flag: `pytest tests/ --backend=jax`
+- Ensure the backend package is installed (tensorflow, torch, or jax)
+
+### Backend not installed error
+- If you get an error like "Backend 'X' selected but required package not installed"
+- Install the required backend:
+  - TensorFlow: `pip install tensorflow`
+  - PyTorch: `pip install torch`
+  - JAX: `pip install jax jaxlib`
 
 ## Contributing
 
