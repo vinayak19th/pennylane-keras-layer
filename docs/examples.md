@@ -305,7 +305,7 @@ print(classification_report(y_test, y_pred))
 # Visualize decision boundary
 import matplotlib.pyplot as plt
 
-def plot_decision_boundary(model, X, y):
+def plot_decision_boundary(model, X, labels):
     h = 0.02
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
     y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
@@ -316,7 +316,7 @@ def plot_decision_boundary(model, X, y):
     Z = Z.reshape(xx.shape)
     
     plt.contourf(xx, yy, Z, alpha=0.4, cmap='RdYlBu')
-    plt.scatter(X[:, 0], X[:, 1], c=y, cmap='RdYlBu', edgecolors='k')
+    plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='RdYlBu', edgecolors='k')
     plt.xlabel('Feature 1')
     plt.ylabel('Feature 2')
 
@@ -465,6 +465,9 @@ num_batches = len(X_train) // batch_size
 
 train_losses = []
 
+# For JAX backend, use JAX-specific gradient computation
+import jax
+
 for epoch in range(epochs):
     epoch_loss = 0
     
@@ -480,13 +483,20 @@ for epoch in range(epochs):
         X_batch = X_shuffled[start:end]
         y_batch = y_shuffled[start:end]
         
-        # Forward pass with gradient tape
-        with keras.backend.GradientTape() as tape:
+        # Forward pass with gradient computation
+        def compute_loss(trainable_vars):
+            # Set model weights
+            for var, val in zip(model.trainable_variables, trainable_vars):
+                var.assign(val)
             predictions = model(X_batch, training=True)
-            loss = loss_fn(y_batch, predictions)
+            return loss_fn(y_batch, predictions)
         
-        # Backward pass
-        gradients = tape.gradient(loss, model.trainable_variables)
+        # Compute gradients
+        loss_value, gradients = jax.value_and_grad(
+            lambda vars: compute_loss(vars).numpy()
+        )(model.trainable_variables)
+        
+        # Update weights
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
         
         epoch_loss += loss.numpy()

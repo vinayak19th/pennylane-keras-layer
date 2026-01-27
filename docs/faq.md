@@ -251,13 +251,14 @@ Yes, depends on the backend:
 
 **JAX:**
 ```bash
-# Install JAX with CUDA support
-pip install jax[cuda] -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+# Install JAX with CUDA support (check JAX docs for latest instructions)
+pip install --upgrade "jax[cuda12_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 
 **TensorFlow:**
 ```bash
-pip install tensorflow[and-cuda]  # TensorFlow 2.15+
+# TensorFlow 2.15+ includes GPU support by default
+pip install tensorflow>=2.15.0
 ```
 
 **PyTorch:**
@@ -449,12 +450,17 @@ QKerasLayer(
 import keras
 import numpy as np
 
-# Check gradients
+# Check gradients (backend-specific)
+# For TensorFlow:
+import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
+import tensorflow as tf
+
 model = create_model()
 x = np.random.randn(1, 1)
 y = np.random.randn(1, 1)
 
-with keras.backend.GradientTape() as tape:
+with tf.GradientTape() as tape:
     pred = model(x)
     loss = keras.losses.mse(y, pred)
 

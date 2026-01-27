@@ -24,14 +24,16 @@ import os
 # Set JAX as backend BEFORE importing Keras
 os.environ["KERAS_BACKEND"] = "jax"
 
+# Configure JAX for 64-bit precision BEFORE importing keras
+import jax
+jax.config.update("jax_enable_x64", True)
+
 import numpy as np
 import keras
 from pennylane_keras_layer import QKerasLayer
 
-# Configure for 64-bit precision
+# Set Keras float precision
 keras.backend.set_floatx('float64')
-import jax
-jax.config.update("jax_enable_x64", True)
 
 print(f"Backend: {keras.backend.backend()}")
 ```
@@ -177,7 +179,7 @@ print(f"Using backend: {keras.backend.backend()}")
 ```python
 # Generate data
 X = np.random.randn(200, 1)
-y = np.cos(X * 2).ravel()
+y = np.cos(X * 2).reshape(-1)
 
 # Split data
 split = int(0.8 * len(X))

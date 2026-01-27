@@ -46,8 +46,13 @@ pip install -e ".[dev]"
 import os
 os.environ["KERAS_BACKEND"] = "jax"  # Set backend before importing keras
 
+import numpy as np
 import keras
 from pennylane_keras_layer import QKerasLayer
+
+# Create sample data
+X_train = np.linspace(-np.pi, np.pi, 100).reshape(-1, 1)
+y_train = np.sin(X_train)
 
 # Create a quantum layer
 q_layer = QKerasLayer(layers=3, scaling=1.0, num_wires=1)
@@ -60,7 +65,7 @@ model = keras.Sequential([
 
 # Compile and train
 model.compile(optimizer="adam", loss="mse")
-# model.fit(X_train, y_train, epochs=50)
+model.fit(X_train, y_train, epochs=50)
 ```
 
 ## Documentation

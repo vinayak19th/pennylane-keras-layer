@@ -75,13 +75,14 @@ q_layer = QKerasLayer(layers=2, circ_grad_method="parameter-shift")
 ```
 
 #### num_wires : int, optional (default=1)
-Number of qubits/wires in the quantum circuit.
+Number of qubits/wires to initialize the quantum device with.
 
-**Note:** Current implementation uses only wire 0 for computations, regardless of this parameter. Future versions may support multi-wire circuits.
+**Note:** Current implementation uses only wire 0 for computations. Multi-wire support may be added in future versions.
 
 **Example:**
 ```python
-q_layer = QKerasLayer(layers=2, num_wires=4)
+# Currently, use num_wires=1
+q_layer = QKerasLayer(layers=2, num_wires=1)
 ```
 
 #### use_jax_python : bool, optional (default=False)

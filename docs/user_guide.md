@@ -62,7 +62,7 @@ Output (classical)
 
 Weights have shape `(layers + 1, 3)`:
 - Each row: `[φ, θ, ω]` for `qml.Rot(φ, θ, ω)`
-- `layers + 1` rows because the final layer has only rotation, no encoding
+- Total of `layers + 1` rotation gates: `layers` rotations followed by data encoding, plus one final rotation
 - Initialized randomly in `[0, 2π)`
 
 ### Circuit Components
@@ -522,8 +522,12 @@ sample_input = np.random.randn(1, 10)
 output = model(sample_input)
 assert output.shape == (1, 1), "Output shape mismatch"
 
-# Gradient test
-with keras.backend.GradientTape() as tape:
+# Gradient test (backend-specific example for TensorFlow)
+import os
+os.environ["KERAS_BACKEND"] = "tensorflow"
+import tensorflow as tf
+
+with tf.GradientTape() as tape:
     output = model(sample_input)
     loss = keras.losses.mse(output, target)
 grads = tape.gradient(loss, model.trainable_variables)
