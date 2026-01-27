@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include requirements.txt
+include pyproject.toml
+recursive-include pennylane_keras_layer *.py
+recursive-include tests *.py
+recursive-include examples *.py
+global-exclude __pycache__
+global-exclude *.py[cod]
