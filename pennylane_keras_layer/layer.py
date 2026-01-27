@@ -59,6 +59,16 @@ class KerasCircuitLayer(keras.layers.Layer):
                 trainable=True
             )
         self.built = True
+    
+    def draw_qnode(self, **kwargs):
+        """Draw the layer circuit."""
+        if not self.is_built:
+            raise RuntimeError(
+                "KerasDRCircuitLayer must be built before drawing."
+            )
+        
+        x = ops.expand_dims(keras.random.uniform(shape=self._circuit_input_shape), 0)
+        qml.draw_mpl(self.circuit,**kwargs)(self.layer_weights.numpy(), x)
         
     def call(self, inputs):
         """Execute the QNode.
@@ -81,12 +91,17 @@ class KerasCircuitLayer(keras.layers.Layer):
         
         weight_values = [self.qnode_weights[k] for k in self.weight_shapes.keys()]
         
-        # Handle JAX JIT compatibility
         if keras.config.backend() == "jax":
             # Use .value to get the underlying value for JIT compatibility
             weight_values = [w.value for w in self.qnode_weights.values()]
             
-        return self.qnode(*weight_values, inputs)
+        res = self.qnode(*weight_values, inputs)
+        
+        # If the QNode returns a list of results (multiple measurements), stack them
+        if isinstance(res, (list, tuple)):
+            return ops.stack(res, axis=-1)
+            
+        return res
 
     def compute_output_shape(self, input_shape):
         if self.output_dim:
