@@ -12,8 +12,7 @@ def test_package_imports():
 def test_pennylane_available():
     """Test that PennyLane is available."""
     try:
-        import pennylane as qml
-        assert qml is not None
+        import pennylane as qml  # noqa: F401
     except ImportError:
         pytest.skip("PennyLane not installed")
 
@@ -21,7 +20,6 @@ def test_pennylane_available():
 def test_keras_available():
     """Test that Keras is available."""
     try:
-        import keras
-        assert keras is not None
+        import keras  # noqa: F401
     except ImportError:
         pytest.skip("Keras not installed")
