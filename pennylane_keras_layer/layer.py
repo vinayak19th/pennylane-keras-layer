@@ -12,7 +12,9 @@ from keras.saving import serialize_keras_object, deserialize_keras_object
 from keras import ops
 import pennylane as qml
 import numpy as np
-
+import inspect
+from collections.abc import Iterable
+from typing import Optional, Text
 
 @register_keras_serializable(package="PennylaneKeras", name="KerasCircuitLayer")
 class KerasCircuitLayer(keras.layers.Layer):
@@ -25,50 +27,165 @@ class KerasCircuitLayer(keras.layers.Layer):
         qnode (qml.QNode): The PennyLane QNode to be executed.
         weight_shapes (dict): A dictionary mapping weight argument names to their shapes.
         output_dim (int): The output dimension of the QNode. Optional.
+        use_jax_python (bool): Flag to use the vectorized jax backend. 
+        weight_specs (dict[str, dict]): An optional dictionary for users to provide additional
+            specifications for weights used in the QNode, such as the method of parameter
+            initialization. This specification is provided as a dictionary with keys given by the
+            arguments of the `add_weight()
+            <https://keras.io/api/layers/base_layer/#addweight-method>`__
+            method and values being the corresponding specification.
         **kwargs: Additional keyword arguments for the Keras Layer class.
     """
     
     def __init__(
         self,
-        qnode,
+        qnode:qml.QNode,
         weight_shapes: dict,
         output_dim: int = None,
+        use_jax_python: bool = False,
+        weight_specs = None,
         **kwargs
     ):
         """Initialize the KerasCircuitLayer."""
         super().__init__(**kwargs)
         
+        
         self.qnode = qnode
         self.weight_shapes = weight_shapes
         self.output_dim = output_dim
         self.qnode_weights = {}
+        self.use_jax_python = use_jax_python
+        self.weight_specs = weight_specs if weight_specs is not None else {}
+
+        if qnode==None:
+            print("Warning: QNode loaded as None. This is normally the case after loading the model from a file. Please use 'set_qnode' method to restore the qnode")
+        else:
+            self._signature_validation(qnode, weight_shapes)
+
+        # Allows output_dim to be specified as an int or as a tuple, e.g, 5, (5,), (5, 2), [5, 2]
+        # Note: Single digit values will be considered an int and multiple as a tuple, e.g [5,] or (5,)
+        # are passed as integer 5 and [5, 2] will be passes as tuple (5, 2)
+        if isinstance(output_dim, Iterable) and len(output_dim) > 1:
+            self.output_dim = tuple(output_dim)
+        else:
+            self.output_dim = output_dim[0] if isinstance(output_dim, Iterable) else output_dim
+
+        # Define Keras Layer flags
+        self.is_built: bool = False
         
-        # Verify backend compatibility
+        # Selecting the Pennylane interface based on keras backend
         backend = keras.config.backend()
-        if backend == "tensorflow":
-             # We rely on the user to use Eager execution
-             pass 
+        if backend == "torch":
+            self.interface = "torch"
+        elif backend == "tensorflow":
+            self.interface = "tf"
+        elif backend == "jax":
+            if use_jax_python:
+                self.interface = "jax-python"
+            else:
+                self.interface = "jax"
+        else:
+            raise ValueError(
+                f"Unsupported Keras backend: {backend}. "
+                f"Supported backends are: 'torch', 'tensorflow', 'jax'"
+            )
+        
+        self.build(None)
+
+    def _signature_validation(self, qnode, weight_shapes):
+        sig = inspect.signature(qnode.func).parameters
+
+        if self.input_arg not in sig:
+            raise TypeError(
+                f"QNode must include an argument with name {self.input_arg} for inputting data"
+            )
+
+        if self.input_arg in set(weight_shapes.keys()):
+            raise ValueError(
+                f"{self.input_arg} argument should not have its dimension specified in "
+                f"weight_shapes"
+            )
+
+        param_kinds = [p.kind for p in sig.values()]
+
+        if inspect.Parameter.VAR_POSITIONAL in param_kinds:
+            raise TypeError("Cannot have a variable number of positional arguments")
+
+        if inspect.Parameter.VAR_KEYWORD not in param_kinds:
+            if set(weight_shapes.keys()) | {self.input_arg} != set(sig.keys()):
+                raise ValueError("Must specify a shape for every non-input parameter in the QNode")
+    @property
+    def input_arg(self):
+        """Name of the argument to be used as the input to the Keras
+        `Layer <https://keras.io/api/layers/base_layer/#layer-class>`__. Set to
+        ``"inputs"``."""
+        return self._input_arg
+    
+    @staticmethod
+    def set_input_argument(input_name: Text = "inputs") -> None:
+        """
+        Set the name of the input argument.
+
+        Args:
+            input_name (str): Name of the input argument
+        """
+        KerasCircuitLayer._input_arg = input_name
              
     def build(self, input_shape):
         """Initialize the layer weights."""
-        for name, shape in self.weight_shapes.items():
-            self.qnode_weights[name] = self.add_weight(
-                name=name,
-                shape=shape,
-                initializer="uniform",
-                trainable=True
-            )
+        for weight, size in self.weight_shapes.items():
+            spec = self.weight_specs.get(weight, {})
+            if 'initializer' not in spec:
+                self.qnode_weights[weight] = self.add_weight(name=weight, 
+                    shape=size, 
+                    initializer=keras.initializers.random_uniform(minval=0, maxval=2 * np.pi),
+                    **spec)
+            else:
+                self.qnode_weights[weight] = self.add_weight(name=weight, 
+                    shape=size, **spec)
+
         self.built = True
+        # Create Quantum Circuit
+        self.circuit = self.create_circuit()
+        self.is_built = True
     
-    def draw_qnode(self, **kwargs):
-        """Draw the layer circuit."""
+    def create_circuit(self):
+        """Create the PennyLane device and QNode."""
+        # Create device once
+        if self.qnode == None:
+            print("Delaying circuit creation till QNode is set using the 'set_qnode' method")
+            return None
+        else:
+            circuit_node = self.qnode
+            circuit_node.interface = self.interface
+            if self.interface == "jax":
+                import jax
+                return jax.jit(circuit_node)
+            else:
+                return circuit_node
+    
+    def draw_qnode(self,input, **kwargs):
+        """Draw the quantum circuit.
+
+        Args:
+            input (tensor-like): Input data to the circuit.
+            **kwargs: Additional keyword arguments to be passed to `qml.draw_mpl`.
+
+        Raises:
+            RuntimeError: If the layer has not been built.
+        """
         if not self.is_built:
             raise RuntimeError(
                 "KerasDRCircuitLayer must be built before drawing."
             )
-        
-        x = ops.expand_dims(keras.random.uniform(shape=self._circuit_input_shape), 0)
-        qml.draw_mpl(self.circuit,**kwargs)(self.layer_weights.numpy(), x)
+
+        weight_values = [self.qnode_weights[k] for k in self.weight_shapes.keys()]
+        if keras.config.backend() == "jax":
+            # Use .value to get the underlying value for JIT compatibility
+            weight_values = [w.value for w in self.qnode_weights.values()]
+            qml.draw_mpl(self.circuit.func,**kwargs)(weight_values, input)
+        else:
+            qml.draw_mpl(self.circuit,**kwargs)(weight_values, input)
         
     def call(self, inputs):
         """Execute the QNode.
@@ -93,9 +210,9 @@ class KerasCircuitLayer(keras.layers.Layer):
         
         if keras.config.backend() == "jax":
             # Use .value to get the underlying value for JIT compatibility
-            weight_values = [w.value for w in self.qnode_weights.values()]
+            weight_values = [w.value for w in weight_values]
             
-        res = self.qnode(*weight_values, inputs)
+        res = self.circuit(*weight_values, inputs)
         
         # If the QNode returns a list of results (multiple measurements), stack them
         if isinstance(res, (list, tuple)):
@@ -103,7 +220,30 @@ class KerasCircuitLayer(keras.layers.Layer):
             
         return res
 
-    def compute_output_shape(self, input_shape):
+    # def __getattr__(self, item):
+    #     """If the given attribute does not exist in the class, look for it in the wrapped QNode."""
+    #     if self._initialized and hasattr(self.qnode, item):
+    #         return getattr(self.qnode, item)
+
+    #     return super().__getattr__(item)
+
+    # def __setattr__(self, item, val):
+    #     """If the given attribute does not exist in the class, try to set it in the wrapped QNode."""
+    #     if self._initialized and hasattr(self.qnode, item):
+    #         setattr(self.qnode, item, val)
+    #     else:
+    #         super().__setattr__(item, val)
+    
+    def compute_output_shape(self, input_shape:tuple):
+        """Computes the output shape after passing data of shape ``input_shape`` through the
+        QNode.
+
+        Args:
+            input_shape (tuple): shape of input data
+
+        Returns:
+            tuple: shape of output data
+        """
         if self.output_dim:
              if self.output_dim == 1:
                  return (input_shape[0],)
@@ -114,22 +254,41 @@ class KerasCircuitLayer(keras.layers.Layer):
         config = super().get_config()
         config.update({
             "weight_shapes": serialize_keras_object(self.weight_shapes),
-            "output_dim": serialize_keras_object(self.output_dim)
+            "output_dim": serialize_keras_object(self.output_dim),
+            "use_jax_python": serialize_keras_object(self.use_jax_python),
         })
         return config
+    
+    def __str__(self):
+        return f"<Quantum Keras ({self.interface} backend) Layer: func={self.qnode.func.__name__}>"
+
+    def set_qnode(self, qnode:qml.QNode):
+        """_summary_
+
+        Args:
+            qnode (qml.QNode): _description_
+        """
+        self.qnode = qnode
+        print("Verifying QNode compatibility")
+        self._signature_validation(qnode, self.weight_shapes)
+        print("Setting QNode")
+        self.circuit = self.create_circuit()
 
     @classmethod
     def from_config(cls, config):
         weight_shapes = deserialize_keras_object(config.pop("weight_shapes", {}))
         output_dim = deserialize_keras_object(config.pop("output_dim", None))
+        use_jax_python = deserialize_keras_object(config.pop("use_jax_python", False))
         
         return cls(
             qnode=None, # Cannot restore QNode
             weight_shapes=weight_shapes,
             output_dim=output_dim,
+            use_jax_python = use_jax_python,
             **config
         )
 
+KerasCircuitLayer.set_input_argument()
 
 @register_keras_serializable(package="PennylaneKeras", name="KerasDRCircuitLayer")
 class KerasDRCircuitLayer(keras.layers.Layer):
@@ -250,21 +409,17 @@ class KerasDRCircuitLayer(keras.layers.Layer):
         return qml.expval(qml.PauliZ(wires=0))
     
     def create_circuit(self):
-        """Create the PennyLane device and QNode."""
-        # Create device once
-        dev = qml.device(self.circ_backend, wires=self.num_wires)
-        circuit_node = qml.QNode(
-            self.serial_quantum_model,
-            dev,
-            diff_method=self.circ_grad_method,
-            interface=self.interface
-        )
-        
+        """ Creates the PennyLane device and QNode"""
         if self.interface == "jax":
-            import jax
-            return jax.jit(circuit_node)
+            @jax.jit
+            def create_circuit_jax_jit(layer_weights, x):
+                dev = qml.device(self.circ_backend, wires = self.num_wires)
+                circuit_node = qml.QNode(self.serial_quantum_model, dev, diff_method=self.circ_grad_method, interface=self.interface)
+                return circuit_node(layer_weights, x)
+            return create_circuit_jax_jit
         else:
-            return circuit_node
+            dev = qml.device(self.circ_backend, wires = self.num_wires)
+            return qml.QNode(self.serial_quantum_model, dev, diff_method=self.circ_grad_method, interface=self.interface)
     
     def call(self, inputs):
         """Define the forward pass of the layer."""
