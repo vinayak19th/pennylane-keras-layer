@@ -42,20 +42,22 @@ pip install -e ".[dev]"
 
 ## Quick Start
 
+### Option 1: Data Re-Uploading Circuit Layer
+
 ```python
 import os
 os.environ["KERAS_BACKEND"] = "jax"  # Set backend before importing keras
 
 import numpy as np
 import keras
-from pennylane_keras_layer import QKerasLayer
+from pennylane_keras_layer import KerasDRCircuitLayer
 
 # Create sample data
 X_train = np.linspace(-np.pi, np.pi, 100).reshape(-1, 1)
 y_train = np.sin(X_train)
 
-# Create a quantum layer
-q_layer = QKerasLayer(layers=3, scaling=1.0, num_wires=1)
+# Create a Data Re-Uploading quantum layer
+q_layer = KerasDRCircuitLayer(layers=3, scaling=1.0, num_wires=1)
 
 # Build a model
 model = keras.Sequential([
@@ -66,6 +68,34 @@ model = keras.Sequential([
 # Compile and train
 model.compile(optimizer="adam", loss="mse")
 model.fit(X_train, y_train, epochs=50)
+```
+
+### Option 2: Generic Circuit Layer with Custom QNode
+
+```python
+import pennylane as qml
+from pennylane_keras_layer import KerasCircuitLayer
+
+# Define a custom quantum circuit
+dev = qml.device('default.qubit', wires=2)
+
+@qml.qnode(dev)
+def custom_circuit(weights, inputs):
+    qml.RX(inputs[0], wires=0)
+    qml.Rot(*weights[0], wires=0)
+    qml.CNOT(wires=[0, 1])
+    qml.Rot(*weights[1], wires=1)
+    return qml.expval(qml.PauliZ(0))
+
+# Create a generic quantum layer
+weight_shapes = {"weights": (2, 3)}
+q_layer = KerasCircuitLayer(custom_circuit, weight_shapes, output_dim=1)
+
+# Use in a Keras model
+model = keras.Sequential([
+    keras.layers.Input(shape=(1,)),
+    q_layer
+])
 ```
 
 ## Documentation

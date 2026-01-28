@@ -22,6 +22,22 @@ PennyLane Keras Layer is a Python library that bridges quantum computing and cla
 - **Leverage PennyLane's** powerful quantum computing features
 - **Serialize and deserialize** quantum models with Keras' save/load mechanisms
 
+## Two Types of Quantum Layers
+
+This library provides two types of quantum circuit layers:
+
+### 1. KerasDRCircuitLayer - Data Re-Uploading Circuit
+A specialized layer implementing the Data Re-Uploading quantum machine learning paradigm:
+- Pre-defined circuit architecture optimized for function approximation
+- Automatic weight initialization
+- Ideal for getting started quickly with quantum ML
+
+### 2. KerasCircuitLayer - Generic Circuit Wrapper
+A flexible layer that wraps any PennyLane QNode:
+- Full control over circuit architecture
+- Supports custom gates and measurements
+- Perfect for research and experimentation with novel quantum circuits
+
 ## Key Features
 
 ### Multi-Backend Support
@@ -57,15 +73,17 @@ pip install -e ".[dev]"
 
 ## Quick Example
 
+### Using Data Re-Uploading Layer
+
 ```python
 import os
 os.environ["KERAS_BACKEND"] = "jax"  # or "tensorflow" or "torch"
 
 import keras
-from pennylane_keras_layer import QKerasLayer
+from pennylane_keras_layer import KerasDRCircuitLayer
 
-# Create a quantum layer
-q_layer = QKerasLayer(
+# Create a Data Re-Uploading quantum layer
+q_layer = KerasDRCircuitLayer(
     layers=2,
     scaling=1.0,
     num_wires=1,
@@ -82,6 +100,33 @@ model = keras.Sequential([
 # Train like any Keras model
 model.compile(optimizer="adam", loss="mse")
 model.fit(X_train, y_train, epochs=10)
+```
+
+### Using Generic Circuit Layer
+
+```python
+import pennylane as qml
+from pennylane_keras_layer import KerasCircuitLayer
+
+# Define custom quantum circuit
+dev = qml.device('default.qubit', wires=2)
+
+@qml.qnode(dev)
+def my_circuit(weights, inputs):
+    qml.RX(inputs[0], wires=0)
+    qml.Rot(*weights[0], wires=0)
+    qml.CNOT(wires=[0, 1])
+    return qml.expval(qml.PauliZ(0))
+
+# Create generic quantum layer
+weight_shapes = {"weights": (1, 3)}
+q_layer = KerasCircuitLayer(my_circuit, weight_shapes, output_dim=1)
+
+# Use in model
+model = keras.Sequential([
+    keras.layers.Input(shape=(1,)),
+    q_layer
+])
 ```
 
 ## System Requirements
