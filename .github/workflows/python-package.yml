@@ -17,6 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
+        backend: ["tensorflow", "torch", "jax"]
 
     steps:
     - uses: actions/checkout@v4
@@ -29,6 +30,9 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ "${{ matrix.backend }}" = "tensorflow" ]; then pip install tensorflow; fi
+        if [ "${{ matrix.backend }}" = "torch" ]; then pip install torch; fi
+        if [ "${{ matrix.backend }}" = "jax" ]; then pip install jax jaxlib; fi
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -36,5 +40,7 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
+      env:
+        KERAS_BACKEND: ${{ matrix.backend }}
       run: |
         pytest
