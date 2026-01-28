@@ -60,7 +60,7 @@ class KerasCircuitLayer(keras.layers.Layer):
         if qnode==None:
             print("Warning: QNode loaded as None. This is normally the case after loading the model from a file. Please use 'set_qnode' method to restore the qnode")
         else:
-            self._signature_validation(qnode, weight_shapes)
+            self._signature_validation(self.qnode, weight_shapes)
 
         # Allows output_dim to be specified as an int or as a tuple, e.g, 5, (5,), (5, 2), [5, 2]
         # Note: Single digit values will be considered an int and multiple as a tuple, e.g [5,] or (5,)
@@ -71,15 +71,20 @@ class KerasCircuitLayer(keras.layers.Layer):
             self.output_dim = output_dim[0] if isinstance(output_dim, Iterable) else output_dim
 
         # Define Keras Layer flags
-        self.is_built: bool = False
+        self.built: bool = False
         
-        # Selecting the Pennylane interface based on keras backend
+        # Selecting the Pennylane interface based on keras backend and set them to double precisions
         backend = keras.config.backend()
         if backend == "torch":
+            import torch
+            torch.set_default_dtype(torch.float64)
             self.interface = "torch"
         elif backend == "tensorflow":
+            import tensorflow as tf
             self.interface = "tf"
         elif backend == "jax":
+            import jax
+            jax.config.update("jax_enable_x64", True)
             if use_jax_python:
                 self.interface = "jax-python"
             else:
@@ -89,8 +94,10 @@ class KerasCircuitLayer(keras.layers.Layer):
                 f"Unsupported Keras backend: {backend}. "
                 f"Supported backends are: 'torch', 'tensorflow', 'jax'"
             )
-        
+        # Build the layer as output shape and weight shapes are input_shape independent
         self.build(None)
+        # Update qnode interface and compile
+        self.update_qnode()
 
     def _signature_validation(self, qnode, weight_shapes):
         sig = inspect.signature(qnode.func).parameters
@@ -145,24 +152,18 @@ class KerasCircuitLayer(keras.layers.Layer):
                     shape=size, **spec)
 
         self.built = True
-        # Create Quantum Circuit
-        self.circuit = self.create_circuit()
-        self.is_built = True
     
-    def create_circuit(self):
-        """Create the PennyLane device and QNode."""
+    def update_qnode(self) -> None:
+        """Update the QNode with the correct interface"""
         # Create device once
         if self.qnode == None:
             print("Delaying circuit creation till QNode is set using the 'set_qnode' method")
             return None
         else:
-            circuit_node = self.qnode
-            circuit_node.interface = self.interface
+            self.qnode.interface = self.interface
             if self.interface == "jax":
                 import jax
-                return jax.jit(circuit_node)
-            else:
-                return circuit_node
+                self.qnode = jax.jit(self.qnode)
     
     def draw_qnode(self,input, **kwargs):
         """Draw the quantum circuit.
@@ -174,7 +175,7 @@ class KerasCircuitLayer(keras.layers.Layer):
         Raises:
             RuntimeError: If the layer has not been built.
         """
-        if not self.is_built:
+        if not self.built:
             raise RuntimeError(
                 "KerasDRCircuitLayer must be built before drawing."
             )
@@ -183,9 +184,9 @@ class KerasCircuitLayer(keras.layers.Layer):
         if keras.config.backend() == "jax":
             # Use .value to get the underlying value for JIT compatibility
             weight_values = [w.value for w in self.qnode_weights.values()]
-            qml.draw_mpl(self.circuit.func,**kwargs)(weight_values, input)
+            qml.draw_mpl(self.qnode.func,**kwargs)(weight_values, input)
         else:
-            qml.draw_mpl(self.circuit,**kwargs)(weight_values, input)
+            qml.draw_mpl(self.qnode,**kwargs)(weight_values, input)
         
     def call(self, inputs):
         """Execute the QNode.
@@ -212,7 +213,7 @@ class KerasCircuitLayer(keras.layers.Layer):
             # Use .value to get the underlying value for JIT compatibility
             weight_values = [w.value for w in weight_values]
             
-        res = self.circuit(*weight_values, inputs)
+        res = self.qnode(*weight_values, inputs)
         
         # If the QNode returns a list of results (multiple measurements), stack them
         if isinstance(res, (list, tuple)):
@@ -271,8 +272,8 @@ class KerasCircuitLayer(keras.layers.Layer):
         self.qnode = qnode
         print("Verifying QNode compatibility")
         self._signature_validation(qnode, self.weight_shapes)
-        print("Setting QNode")
-        self.circuit = self.create_circuit()
+        print("Updating QNode")
+        self.update_qnode()
 
     @classmethod
     def from_config(cls, config):
@@ -351,7 +352,7 @@ class KerasDRCircuitLayer(keras.layers.Layer):
         self.use_jax_python = use_jax_python
         
         # Define Keras Layer flags
-        self.is_built: bool = False
+        self.built: bool = False
         
         # Selecting the Pennylane interface based on keras backend
         backend = keras.config.backend()
@@ -386,7 +387,7 @@ class KerasDRCircuitLayer(keras.layers.Layer):
         
         # Create Quantum Circuit
         self.circuit = self.create_circuit()
-        self.is_built = True
+        self.built = True
     
     def compute_output_shape(self, input_shape):
         return (input_shape[0], self.num_wires)
@@ -426,7 +427,7 @@ class KerasDRCircuitLayer(keras.layers.Layer):
     
     def call(self, inputs):
         """Define the forward pass of the layer."""
-        if not self.is_built:
+        if not self.built:
             raise RuntimeError(
                 "KerasDRCircuitLayer must be built before calling."
             )
@@ -441,7 +442,7 @@ class KerasDRCircuitLayer(keras.layers.Layer):
 
     def draw_qnode(self, **kwargs):
         """Draw the layer circuit."""
-        if not self.is_built:
+        if not self.built:
             raise RuntimeError(
                 "KerasDRCircuitLayer must be built before drawing."
             )
