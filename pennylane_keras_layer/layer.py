@@ -377,20 +377,6 @@ class KerasCircuitLayer(keras.layers.Layer):
             
         return ops.cast(res, self.compute_dtype)
 
-    # def __getattr__(self, item):
-    #     """If the given attribute does not exist in the class, look for it in the wrapped QNode."""
-    #     if self._initialized and hasattr(self.qnode, item):
-    #         return getattr(self.qnode, item)
-
-    #     return super().__getattr__(item)
-
-    # def __setattr__(self, item, val):
-    #     """If the given attribute does not exist in the class, try to set it in the wrapped QNode."""
-    #     if self._initialized and hasattr(self.qnode, item):
-    #         setattr(self.qnode, item, val)
-    #     else:
-    #         super().__setattr__(item, val)
-    
     def compute_output_shape(self, input_shape:tuple):
         """Computes the output shape after passing data of shape ``input_shape`` through the
         QNode.
@@ -449,11 +435,22 @@ KerasCircuitLayer.set_input_argument()
 
 @register_keras_serializable(package="PennylaneKeras", name="KerasDRCircuitLayer")
 class KerasDRCircuitLayer(keras.layers.Layer):
-    """A Keras Layer wrapping a PennyLane Q-Node.
+    """A Keras Layer wrapping a PennyLane QNode for Data Re-Uploading.
     
     This layer implements a Data Re-Uploading quantum machine learning model
     that can be integrated into Keras models with full multi-backend support.
     
+    The Data Re-Uploading model consists of a series of trainable rotation blocks 
+    interleaved with data encoding blocks. For a model with :math:`L` layers, the structure is:
+    
+    :math:`U(x; \theta) = W(\theta_L) S(x) W(\theta_{L-1}) S(x) \dots W(\theta_1) S(x)`
+    
+    where:
+    - :math:`S(x)` is the data encoding block: :math:`RX(scaling * x)`
+    - :math:`W(\theta)` is the trainable rotation block: :math:`Rot(\theta_1, \theta_2, \theta_3)`
+    
+    The backend can be selected by setting the `KERAS_BACKEND` environment variable to "tensorflow", "jax", or "torch".
+
     Args:
         layers (int): Number of layers in the DR Model.
         scaling (float): Scaling factor for the input data. Defaults to 1.0
@@ -465,17 +462,48 @@ class KerasDRCircuitLayer(keras.layers.Layer):
             See: https://docs.pennylane.ai/en/stable/introduction/interfaces/jax.html for details
         **kwargs: Additional keyword arguments for the keras Layer class such as 'name'.
     
-    Example:
-        >>> import keras
-        >>> from pennylane_keras_layer import KerasDRCircuitLayer
-        >>> 
-        >>> # Create a quantum layer
-        >>> q_layer = KerasDRCircuitLayer(layers=2, scaling=1.0, num_wires=1)
-        >>> 
-        >>> # Build a model
-        >>> inp = keras.layers.Input(shape=(1,))
-        >>> out = q_layer(inp)
-        >>> model = keras.models.Model(inputs=inp, outputs=out)
+    **Example**
+
+    .. code-block:: python
+
+        import os
+        os.environ["KERAS_BACKEND"] = "jax"
+        import keras
+        from pennylane_keras_layer import KerasDRCircuitLayer
+        
+        # Create a quantum layer with 2 layers and input scaling of 1.0
+        q_layer = KerasDRCircuitLayer(layers=2, scaling=1.0, num_wires=1)
+        
+        # Build a model
+        # The input shape must be (batch_size, 1) as the current implementation
+        # encodes a single scalar input into the circuit.
+        inp = keras.layers.Input(shape=(1,))
+        out = q_layer(inp)
+        model = keras.models.Model(inputs=inp, outputs=out)
+        
+        model.summary()
+        
+    **Usage Details**
+    
+    **Input Shape**
+    
+    The layer expects an input tensor of shape ``(batch_size, 1)``. The input is treated as a scalar value :math:`x`
+    which is encoded into the quantum circuit using :math:`RX` rotations.
+    
+    **Output**
+    
+    The output of the layer is the expectation value of the PauliZ operator on wire 0.
+    The output shape is ``(batch_size, 1)``.
+    
+    **Backends**
+    
+    The layer supports multiple backends (TensorFlow, JAX, PyTorch) which can be selected
+    via the ``KERAS_BACKEND`` environment variable.
+    
+    **Model Saving**
+    
+    The layer supports standard Keras model saving and loading. Config parameters
+    like ``layers``, ``scaling``, etc., are preserved.
     """
     
     def __init__(
