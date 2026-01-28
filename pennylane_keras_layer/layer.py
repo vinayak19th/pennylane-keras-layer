@@ -120,7 +120,7 @@ class KerasCircuitLayer(keras.layers.Layer):
 
         **Initializing weights**
 
-        If ``weight_specs`` is not specified, weights are randomly initialized from the uniform distribution on the interval :math:`[0, 2 \pi]`.
+        If ``weight_specs`` is not specified, weights are randomly initialized from the uniform distribution on the interval :math:`[0, 2 pi]`.
 
         The optional ``weight_specs`` argument allows for the initialization method of the QNode weights to be specified. The dictionary passed to the argument must be a dictionary where keys are weight names and values are dictionaries of arguments passed to `add_weight`.
 
