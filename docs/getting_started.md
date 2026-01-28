@@ -66,12 +66,12 @@ Create a simple script to verify your installation:
 ```python
 import pennylane as qml
 import keras
-from pennylane_keras_layer import QKerasLayer
+from pennylane_keras_layer import KerasDRCircuitLayer
 
 print(f"✓ PennyLane version: {qml.__version__}")
 print(f"✓ Keras version: {keras.__version__}")
 print(f"✓ Keras backend: {keras.backend.backend()}")
-print(f"✓ QKerasLayer imported successfully")
+print(f"✓ KerasDRCircuitLayer imported successfully")
 ```
 
 ## Setting the Keras Backend
@@ -100,7 +100,7 @@ Create or edit `~/.keras/keras.json`:
 
 ## First Quantum Model
 
-Here's a complete example to create and train your first quantum model:
+Here's a complete example to create and train your first quantum model using the Data Re-Uploading layer:
 
 ```python
 import os
@@ -108,14 +108,14 @@ os.environ["KERAS_BACKEND"] = "jax"
 
 import numpy as np
 import keras
-from pennylane_keras_layer import QKerasLayer
+from pennylane_keras_layer import KerasDRCircuitLayer
 
 # Generate sample data
-X = np.linspace(-np.pi, np.pi, 100)
+X = np.linspace(-np.pi, np.pi, 100).reshape(-1, 1) # Note shape (100, 1)
 y = np.sin(X)
 
 # Create a quantum layer
-q_layer = QKerasLayer(
+q_layer = KerasDRCircuitLayer(
     layers=3,           # Number of quantum layers
     scaling=1.0,        # Input scaling factor
     num_wires=1,        # Number of qubits

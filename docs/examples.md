@@ -16,7 +16,7 @@ Complete working examples demonstrating different use cases of PennyLane Keras L
 
 ## Basic Example
 
-Simple example demonstrating the basic usage of QKerasLayer.
+Simple example demonstrating the basic usage of KerasDRCircuitLayer.
 
 ```python
 """
@@ -27,7 +27,7 @@ os.environ["KERAS_BACKEND"] = "jax"
 
 import numpy as np
 import keras
-from pennylane_keras_layer import QKerasLayer
+from pennylane_keras_layer import KerasDRCircuitLayer
 
 # Generate simple data
 X_train = np.linspace(-np.pi, np.pi, 100).reshape(-1, 1)
@@ -36,7 +36,7 @@ y_train = np.sin(X_train)
 # Create quantum model
 model = keras.Sequential([
     keras.layers.Input(shape=(1,)),
-    QKerasLayer(layers=3, scaling=1.0, name="quantum")
+    KerasDRCircuitLayer(layers=3, scaling=1.0, name="quantum")
 ])
 
 # Compile and train
@@ -95,7 +95,7 @@ def create_target_function(degree=1, scaling=1, coeffs=None, coeff0=0.1):
 target_fn = create_target_function(degree=1, scaling=1.0)
 model = keras.Sequential([
     keras.layers.Input(shape=(1,)),
-    QKerasLayer(layers=2, scaling=1.0)  # layers = degree + 1
+    KerasDRCircuitLayer(layers=2, scaling=1.0)  # layers = degree + 1
 ])
 ```
 
@@ -141,7 +141,7 @@ print(f"Test samples: {len(X_test)}")
 # Create model
 model = keras.Sequential([
     keras.layers.Input(shape=(1,)),
-    QKerasLayer(
+    KerasDRCircuitLayer(
         layers=4,
         scaling=1.5,
         circ_backend="lightning.qubit",
@@ -257,7 +257,7 @@ print(f"Class distribution: {np.bincount(y_train)}")
 # Create hybrid model
 inputs = keras.layers.Input(shape=(2,))
 x = keras.layers.Dense(1)(inputs)  # Reduce to 1D for quantum layer
-x = QKerasLayer(
+x = KerasDRCircuitLayer(
     layers=3,
     scaling=2.0,
     num_wires=1,
@@ -368,14 +368,14 @@ model = keras.Sequential([
     keras.layers.Input(shape=(1,)),
     
     # First quantum layer
-    QKerasLayer(
+    KerasDRCircuitLayer(
         layers=2,
         scaling=1.0,
         name="quantum_layer_1"
     ),
     
     # Second quantum layer
-    QKerasLayer(
+    KerasDRCircuitLayer(
         layers=2,
         scaling=1.0,
         name="quantum_layer_2"
@@ -442,7 +442,7 @@ os.environ["KERAS_BACKEND"] = "jax"
 
 import numpy as np
 import keras
-from pennylane_keras_layer import QKerasLayer
+from pennylane_keras_layer import KerasDRCircuitLayer
 
 # Data
 X_train = np.linspace(-1, 1, 80).reshape(-1, 1)
@@ -451,7 +451,7 @@ y_train = np.tanh(2 * X_train)
 # Model
 model = keras.Sequential([
     keras.layers.Input(shape=(1,)),
-    QKerasLayer(layers=3, scaling=1.5)
+    KerasDRCircuitLayer(layers=3, scaling=1.5)
 ])
 
 # Optimizer and loss
@@ -577,7 +577,7 @@ for config in configs:
     # Create model
     model = keras.Sequential([
         keras.layers.Input(shape=(1,)),
-        QKerasLayer(layers=config['layers'], scaling=config['scaling'])
+        KerasDRCircuitLayer(layers=config['layers'], scaling=config['scaling'])
     ])
     
     # Train
@@ -639,9 +639,6 @@ All examples can be run from the command line:
 ```bash
 # Navigate to examples directory
 cd /path/to/pennylane-keras-layer/examples
-
-# Run basic example
-python basic_example.py
 
 # Run Fourier series example
 python fourier_series_example.py
