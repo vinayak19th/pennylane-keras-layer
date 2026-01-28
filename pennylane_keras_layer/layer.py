@@ -356,10 +356,13 @@ class KerasDRCircuitLayer(keras.layers.Layer):
         # Selecting the Pennylane interface based on keras backend
         backend = keras.config.backend()
         if backend == "torch":
+            import torch
             self.interface = "torch"
         elif backend == "tensorflow":
+            import tensorflow as tf
             self.interface = "tf"
         elif backend == "jax":
+            import jax
             if use_jax_python:
                 self.interface = "jax-python"
             else:
