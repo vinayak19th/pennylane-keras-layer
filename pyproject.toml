@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pennylane-keras-layer"
-version = "0.1.0"
+version = "1.0.0"
 description = "A library to introduce Keras 3 support to PennyLane with full support for multi-backend training"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
     {name = "Vinayak"}
@@ -62,3 +62,7 @@ python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
+
+[tool.setuptools.packages.find]
+include = ["pennylane_keras_layer*"]
+exclude = ["images*", "examples*", "tests*","docs*"]
