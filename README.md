@@ -2,7 +2,7 @@
 
 A library to introduce Keras 3 support to PennyLane with full support for multi-backend training.
 
-[[![PyPI]](https://img.shields.io/badge/PyPI-3775A9?logo=pypi&logoColor=fff)](#)](https://pypi.org/project/pennylane-keras3-layer/)
+[![PyPI](https://img.shields.io/badge/PyPI-3775A9?logo=pypi&logoColor=fff)](https://pypi.org/project/pennylane-keras3-layer/)
 
 ## Overview
 
