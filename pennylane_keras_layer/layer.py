@@ -335,7 +335,7 @@ class KerasCircuitLayer(keras.layers.Layer):
             )
 
         weight_values = [self.qnode_weights[k] for k in self.weight_shapes.keys()]
-        if keras.config.backend() == "jax":
+        if self.interface == "jax":
             # Use .value to get the underlying value for JIT compatibility
             weight_values = [w.value for w in self.qnode_weights.values()]
             qml.draw_mpl(self.qnode.func,**kwargs)(weight_values, input)
