@@ -294,6 +294,8 @@ class KerasCircuitLayer(keras.layers.Layer):
              
     def build(self, input_shape):
         """Initialize the layer weights."""
+        if self.built:
+            return
         for weight, size in self.weight_shapes.items():
             spec = self.weight_specs.get(weight, {})
             if 'initializer' not in spec:
@@ -371,9 +373,9 @@ class KerasCircuitLayer(keras.layers.Layer):
         
         # If the QNode returns a list of results (multiple measurements), stack them
         if isinstance(res, (list, tuple)):
-            return ops.stack(res, axis=-1)
+            res = ops.stack(res, axis=-1)
             
-        return res
+        return ops.cast(res, self.compute_dtype)
 
     # def __getattr__(self, item):
     #     """If the given attribute does not exist in the class, look for it in the wrapped QNode."""
@@ -530,6 +532,8 @@ class KerasDRCircuitLayer(keras.layers.Layer):
     
     def build(self, input_shape):
         """Initialize the layer weights based on input_shape."""
+        if self.built:
+             return
         self._circuit_input_shape = input_shape[1:]
         
         # Initialize weights
@@ -569,6 +573,7 @@ class KerasDRCircuitLayer(keras.layers.Layer):
     def create_circuit(self):
         """ Creates the PennyLane device and QNode"""
         if self.interface == "jax":
+            import jax
             @jax.jit # noqa
             def create_circuit_jax_jit(layer_weights, x):
                 dev = qml.device(self.circ_backend, wires = self.num_wires)
@@ -589,10 +594,18 @@ class KerasDRCircuitLayer(keras.layers.Layer):
         x = ops.multiply(self.scaling, inputs)
         
         if self.interface == "jax":
-            out = self.circuit(self.layer_weights.value, x)
+            import jax.numpy as jnp
+            # Cast inputs to float64 to ensure consistent JVP
+            x = ops.cast(x, "float64")
+            w = ops.cast(self.layer_weights.value, "float64")
+            out = self.circuit(w, x)
         else:
             out = self.circuit(self.layer_weights, x)
-        return out
+            
+        if len(out.shape) == 1:
+            out = ops.reshape(out, (-1, 1))
+            
+        return ops.cast(out, self.compute_dtype)
 
     def draw_qnode(self, **kwargs):
         """Draw the layer circuit."""
