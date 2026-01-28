@@ -6,14 +6,14 @@ import numpy as np
 
 def test_pennylanekeras_layer_import():
     """Test that KerasCircuitLayer can be imported."""
-    from pennylane_keras_layer import KerasCircuitLayer
+    from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
     assert KerasCircuitLayer is not None
 
 
 def test_pennylanekeras_layer_initialization():
     """Test KerasCircuitLayer initialization with default parameters."""
     try:
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         layer = KerasCircuitLayer(layers=2, num_wires=1)
         assert layer.layers == 2
@@ -28,7 +28,7 @@ def test_pennylanekeras_layer_initialization():
 def test_pennylanekeras_layer_custom_parameters():
     """Test KerasCircuitLayer with custom parameters."""
     try:
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         layer = KerasCircuitLayer(
             layers=3,
@@ -50,14 +50,14 @@ def test_pennylanekeras_layer_build():
     """Test that KerasCircuitLayer builds correctly."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         layer = KerasCircuitLayer(layers=2, num_wires=1)
         
         # Build the layer with input shape
         layer.build(input_shape=(None, 1))
         
-        assert layer.is_built
+        assert layer.built
         assert layer.layer_weights is not None
         assert layer.circuit is not None
         assert layer.layer_weights.shape == (3, 3)  # (layers+1, 3)
@@ -69,7 +69,7 @@ def test_pennylanekeras_layer_in_model():
     """Test KerasCircuitLayer integration in a Keras model."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Create a simple model
         inp = keras.layers.Input(shape=(1,))
@@ -94,7 +94,7 @@ def test_pennylanekeras_layer_forward_pass():
     try:
         import keras
         import numpy as np
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Create model
         inp = keras.layers.Input(shape=(1,))
@@ -122,7 +122,7 @@ def test_pennylanekeras_layer_serialization():
     """Test KerasCircuitLayer serialization and deserialization."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Create layer
         layer = KerasCircuitLayer(
@@ -156,7 +156,7 @@ def test_pennylanekeras_layer_serialization():
 def test_pennylanekeras_layer_compute_output_shape():
     """Test KerasCircuitLayer output shape computation."""
     try:
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         layer = KerasCircuitLayer(layers=2, num_wires=3)
         
@@ -174,14 +174,14 @@ def test_pennylanekeras_layer_not_built_error():
     try:
         import keras
         import numpy as np
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         layer = KerasCircuitLayer(layers=2, num_wires=1)
         
         # Try to call layer before building
         x = np.array([[0.5]])
         
-        with pytest.raises(RuntimeError, match="KerasCircuitLayer must be built before calling"):
+        with pytest.raises(RuntimeError, match="KerasDRCircuitLayer must be built before calling"):
             layer.call(x)
     except ImportError:
         pytest.skip("Required dependencies not installed")
@@ -190,11 +190,11 @@ def test_pennylanekeras_layer_not_built_error():
 def test_pennylanekeras_layer_draw_not_built_error():
     """Test that drawing circuit before building raises an error."""
     try:
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         layer = KerasCircuitLayer(layers=2, num_wires=1)
         
-        with pytest.raises(RuntimeError, match="KerasCircuitLayer must be built before drawing"):
+        with pytest.raises(RuntimeError, match="KerasDRCircuitLayer must be built before drawing"):
             layer.draw_qnode()
     except ImportError:
         pytest.skip("Required dependencies not installed")
@@ -203,7 +203,7 @@ def test_pennylanekeras_layer_draw_not_built_error():
 def test_pennylanekeras_layer_invalid_layers():
     """Test that invalid layers parameter raises ValueError."""
     try:
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Test negative layers
         with pytest.raises(ValueError, match="layers must be a positive integer"):
@@ -223,7 +223,7 @@ def test_pennylanekeras_layer_invalid_layers():
 def test_pennylanekeras_layer_invalid_num_wires():
     """Test that invalid num_wires parameter raises ValueError."""
     try:
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Test negative wires
         with pytest.raises(ValueError, match="num_wires must be a positive integer"):
@@ -239,7 +239,7 @@ def test_pennylanekeras_layer_invalid_num_wires():
 def test_pennylanekeras_layer_invalid_scaling():
     """Test that invalid scaling parameter raises ValueError."""
     try:
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Test negative scaling
         with pytest.raises(ValueError, match="scaling must be a positive number"):

@@ -18,7 +18,7 @@ def test_model_training_basic(sample_data):
     """Test basic model training with KerasCircuitLayer."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         x_train, y_train = sample_data
         
@@ -53,7 +53,7 @@ def test_model_save_and_load(sample_data, tmp_path):
     """Test saving and loading a model with KerasCircuitLayer."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         x_train, _ = sample_data
         
@@ -91,7 +91,7 @@ def test_model_with_multiple_layers(sample_data):
     """Test model with KerasCircuitLayer and other Keras layers."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         x_train, y_train = sample_data
         
@@ -122,7 +122,7 @@ def test_model_prediction_range():
     """Test that model predictions are in valid expectation value range."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Create model
         inp = keras.layers.Input(shape=(1,))
@@ -147,7 +147,7 @@ def test_batch_processing():
     """Test that layer handles different batch sizes correctly."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Create model
         inp = keras.layers.Input(shape=(1,))
@@ -170,7 +170,7 @@ def test_gradient_flow():
     """Test that gradients flow through the quantum layer."""
     try:
         import keras
-        from pennylane_keras_layer import KerasCircuitLayer
+        from pennylane_keras_layer import KerasDRCircuitLayer as KerasCircuitLayer
         
         # Create model
         inp = keras.layers.Input(shape=(1,))
