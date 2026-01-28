@@ -21,6 +21,9 @@ The `KerasCircuitLayer` class wraps PennyLane QNodes as Keras layers, providing:
 import pennylane as qml
 from pennylane_keras_layer import KerasCircuitLayer
 
+# Define quantum device
+dev = qml.device('default.qubit', wires=1)
+
 # Define custom quantum circuit
 @qml.qnode(dev)
 def custom_circuit(inputs, weights):
