@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pennylane-keras-layer"
+name = "pennylane-keras3-layer"
 version = "1.0.0"
 description = "A library to introduce Keras 3 support to PennyLane with full support for multi-backend training"
 readme = "README.md"
