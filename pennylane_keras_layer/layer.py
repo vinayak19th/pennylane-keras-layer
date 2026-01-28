@@ -20,28 +20,182 @@ from typing import Optional, Text
 class KerasCircuitLayer(keras.layers.Layer):
     """A Keras Layer wrapping a PennyLane QNode.
     
-    This layer enables the integration of PennyLane quantum circuits into 
-    Keras models with full multi-backend support.
+    This layer enables the integration of PennyLane quantum circuits into Keras models with full multi-backend support.
+    The backend can be selected by setting the `KERAS_BACKEND` environment variable to "tensorflow", "jax", or "torch" for example:
     
+    >>> os.environ["KERAS_BACKEND"] = "jax"
+    >>> import keras
+    >>> import pennylane as qml
+    >>> from pennylane_keras_layer import KerasCircuitLayer
+
+    The signature of the QNode must contain an inputs named argument for input data, with all other arguments to be treated as internal weights. We can then convert to a Keras layer with:
+
+    >>> weight_shapes = {"weights_0": 3, "weight_1": 1}
+    >>> qlayer = KerasCircuitLayer(qnode, weight_shapes, output_dim=n_qubits)
+
     Args:
-        qnode (qml.QNode): The PennyLane QNode to be executed.
-        weight_shapes (dict): A dictionary mapping weight argument names to their shapes.
-        output_dim (int): The output dimension of the QNode. Optional.
-        use_jax_python (bool): Flag to use the vectorized jax backend. 
+        qnode (qml.QNode): The PennyLane QNode to be converted into a Keras layer.
+        weight_shapes (dict[str, tuple]): A dictionary mapping from all weights used in the QNode to their corresponding shapes.
+        output_dim (int|tuple): The output dimension of the QNode passed as a single output dimension or tuple of output dimensions. Optional. Default is 1.
+        use_jax_python (bool): Flag to use the vectorized jax backend. Default is False.
         weight_specs (dict[str, dict]): An optional dictionary for users to provide additional
             specifications for weights used in the QNode, such as the method of parameter
             initialization. This specification is provided as a dictionary with keys given by the
-            arguments of the `add_weight()
-            <https://keras.io/api/layers/base_layer/#addweight-method>`__
-            method and values being the corresponding specification.
+            arguments of the `add_weight() <https://keras.io/api/layers/base_layer/#addweight-method>`__
+            method and values being the corresponding specification. Optional. Default is None.
         **kwargs: Additional keyword arguments for the Keras Layer class.
+
+    **Example**
+
+    First let's define the QNode that we want to convert into a Keras layer:
+
+    .. code-block:: python
+
+        import pennylane as qml
+        from pennylane_keras_layer import KerasCircuitLayer
+
+        n_qubits = 2
+        dev = qml.device("default.qubit", wires=n_qubits)
+
+        @qml.qnode(dev)
+        def qnode(inputs, weights_0, weight_1):
+            qml.RX(inputs[0], wires=0)
+            qml.RX(inputs[1], wires=1)
+            qml.Rot(*weights_0, wires=0)
+            qml.RY(weight_1, wires=1)
+            qml.CNOT(wires=[0, 1])
+            return qml.expval(qml.Z(0)), qml.expval(qml.Z(1))
+
+    The signature of the QNode **must** contain an ``inputs`` named argument for input data, with all other arguments to be treated as internal weights. We can then convert to a Keras layer with:
+
+    >>> weight_shapes = {"weights_0": 3, "weight_1": 1}
+    >>> qlayer = KerasCircuitLayer(qnode, weight_shapes, output_dim=n_qubits)
+
+    The internal weights of the QNode are automatically initialized within the :class:`~.KerasCircuitLayer` and must have their shapes specified in a ``weight_shapes`` dictionary. It is then easy to combine with other neural network layers from the `keras.layers` module and create a hybrid:
+
+    >>> import keras
+    >>> clayer = keras.layers.Dense(2)
+    >>> model = keras.models.Sequential([qlayer, clayer])
+
+    Building on Keras 3, the KerasCircuitLayer can be used used purely keras models or those of the underlying backend. For example, when using the `torch` backend, the model can be used with `torch.nn.Modules` and `torch.nn.Sequential` models as follows:
+
+    1. First initialize the backend to torch and import the necessary packages:
+    >>> os.environ["KERAS_BACKEND"] = "torch"
+    >>> import torch
+    >>> import keras
+    >>> import pennylane as qml
+    >>> from pennylane_keras_layer import KerasCircuitLayer
+    
+    2. Define the QNode and convert to a Keras layer:
+    >>> weight_shapes = {"weights_0": 3, "weight_1": 1}
+    >>> qlayer = KerasCircuitLayer(qnode, weight_shapes, output_dim=n_qubits)
+    
+    3. Define the model:
+    >>> model = torch.nn.Sequential(
+    ...     qlayer,
+    ...     torch.nn.Linear(n_qubits, 2),
+    ... )
+    
+    This can then be used as a normal torch model:
+    >>> model(torch.tensor([0.1, 0.2]))
+    
+    .. details::
+        :title: Usage Details
+
+        **QNode signature**
+
+        The QNode must have a signature that satisfies the following conditions:
+
+        - Contain an ``inputs`` named argument for input data.
+        - All other arguments must accept an array or tensor and are treated as internal weights of the QNode.
+        - All other arguments must have no default value.
+        - The ``inputs`` argument is permitted to have a default value provided the gradient with respect to ``inputs`` is not required.
+        - There cannot be a variable number of positional or keyword arguments, e.g., no ``*args`` or ``**kwargs`` present in the signature.
+
+        **Output shape**
+
+        The ``output_dim`` argument determines the output shape of the layer.
+        If ``output_dim`` is an integer, the output shape is ``(batch_dim, output_dim)``.
+        If ``output_dim`` is a tuple, the output shape is ``(batch_dim, *output_dim)``.
+
+        **Initializing weights**
+
+        If ``weight_specs`` is not specified, weights are randomly initialized from the uniform distribution on the interval :math:`[0, 2 \pi]`.
+
+        The optional ``weight_specs`` argument allows for the initialization method of the QNode weights to be specified. The dictionary passed to the argument must be a dictionary where keys are weight names and values are dictionaries of arguments passed to `add_weight`.
+
+        For example, weights can be randomly initialized from the normal distribution by passing:
+
+        .. code-block:: python
+
+            weight_specs = {
+                "weights_0": {"initializer": "random_normal"},
+                "weight_1": {"initializer": "ones"}
+            }
+
+        **Model saving**
+
+        Instances of ``KerasCircuitLayer`` can be saved using the usual ``model.save()`` utility.
+        However, since PennyLane QNodes are not natively serializable, loading the model requires a specific step to restore the QNode.
+
+        .. code-block:: python
+
+            model.save("model.keras")
+
+        To load the layer again:
+
+        .. code-block:: python
+
+            model = keras.models.load_model("model.keras")
+            # The QNode is not restored automatically.
+            # We must set it manually for each KerasCircuitLayer in the model
+            # For a sequential model with the quantum layer at index 2:
+            model.layers[2].set_qnode(qnode)
+
+        **Full code example**
+
+        The code block below shows how a circuit composed of templates from the :doc:`/introduction/templates` module can be combined with classical `Dense` layers to learn the two-dimensional `moons <https://scikit-learn.org/stable/modules/generated/sklearn.datasets.make_moons.html>`__ dataset.
+
+        .. code-block:: python
+
+            import pennylane as qml
+            import keras
+            import sklearn.datasets
+            from pennylane_keras_layer import KerasCircuitLayer
+
+            n_qubits = 2
+            dev = qml.device("default.qubit", wires=n_qubits)
+
+            @qml.qnode(dev)
+            def qnode(weights, inputs):
+                qml.AngleEmbedding(inputs, wires=range(n_qubits))
+                qml.BasicEntanglerLayers(weights, wires=range(n_qubits))
+                return [qml.expval(qml.PauliZ(wires=i)) for i in range(n_qubits)]
+
+            n_layers = 6
+            weight_shapes = {"weights": (n_layers, n_qubits)}
+
+            qlayer = KerasCircuitLayer(qnode, weight_shapes, output_dim=n_qubits)
+
+            clayer1 = keras.layers.Dense(2)
+            clayer2 = keras.layers.Dense(2, activation="softmax")
+            model = keras.models.Sequential([keras.Input(shape=(2,)), clayer1, qlayer, clayer2])
+
+            opt = keras.optimizers.SGD(learning_rate=0.2)
+            model.compile(opt, loss="mae", metrics=["accuracy"])
+
+            data = sklearn.datasets.make_moons(n_samples=200, noise=0.1)
+            X = data[0]
+            y_hot = keras.ops.one_hot(data[1], 2)
+
+            model.fit(X, y_hot, epochs=6, batch_size=5, validation_split=0.25)
     """
     
     def __init__(
         self,
         qnode:qml.QNode,
         weight_shapes: dict,
-        output_dim: int = None,
+        output_dim: int | tuple = 1,
         use_jax_python: bool = False,
         weight_specs = None,
         **kwargs
