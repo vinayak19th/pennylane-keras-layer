@@ -13,6 +13,6 @@ __version__ = "0.1.0"
 __author__ = "Vinayak"
 
 # Import main components
-from pennylane_keras_layer.layer import KerasCircuitLayer
+from pennylane_keras_layer.layer import KerasCircuitLayer, KerasDRCircuitLayer
 
-__all__ = ["KerasCircuitLayer"]
+__all__ = ["KerasCircuitLayer", "KerasDRCircuitLayer"]
