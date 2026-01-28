@@ -414,7 +414,7 @@ class KerasDRCircuitLayer(keras.layers.Layer):
     def create_circuit(self):
         """ Creates the PennyLane device and QNode"""
         if self.interface == "jax":
-            @jax.jit
+            @jax.jit # noqa
             def create_circuit_jax_jit(layer_weights, x):
                 dev = qml.device(self.circ_backend, wires = self.num_wires)
                 circuit_node = qml.QNode(self.serial_quantum_model, dev, diff_method=self.circ_grad_method, interface=self.interface)
