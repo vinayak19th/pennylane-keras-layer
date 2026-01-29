@@ -351,7 +351,7 @@ class KerasCircuitLayer(keras.layers.Layer):
         after the weights (which are unpacked from the dictionary in order).
         """
         # Check for TF graph mode
-        if keras.config.backend() == "tensorflow" and not keras.config.run_eagerly():
+        if keras.config.backend() == "tensorflow":
              import tensorflow as tf
              if not tf.executing_eagerly():
                  raise RuntimeError(
@@ -443,11 +443,11 @@ class KerasDRCircuitLayer(keras.layers.Layer):
     The Data Re-Uploading model consists of a series of trainable rotation blocks 
     interleaved with data encoding blocks. For a model with :math:`L` layers, the structure is:
     
-    :math:`U(x; \theta) = W(\theta_L) S(x) W(\theta_{L-1}) S(x) \dots W(\theta_1) S(x)`
+    :math:`U(x; \\theta) = W(\\theta_L) S(x) W(\\theta_{L-1}) S(x) \\dots W(\\theta_1) S(x)`
     
     where:
     - :math:`S(x)` is the data encoding block: :math:`RX(scaling * x)`
-    - :math:`W(\theta)` is the trainable rotation block: :math:`Rot(\theta_1, \theta_2, \theta_3)`
+    - :math:`W(\\theta)` is the trainable rotation block: :math:`Rot(\\theta_1, \\theta_2, \\theta_3)`
     
     The backend can be selected by setting the `KERAS_BACKEND` environment variable to "tensorflow", "jax", or "torch".
 
@@ -619,6 +619,15 @@ class KerasDRCircuitLayer(keras.layers.Layer):
                 "KerasDRCircuitLayer must be built before calling."
             )
         
+        # Check for TF graph mode
+        if keras.config.backend() == "tensorflow":
+             import tensorflow as tf
+             if not tf.executing_eagerly():
+                 raise RuntimeError(
+                     "KerasDRCircuitLayer does not support TensorFlow graph mode (e.g. inside @tf.function) "
+                     "directly. Please use Eager execution or the 'tf' interface in PennyLane."
+                 )
+        
         x = ops.multiply(self.scaling, inputs)
         
         if self.interface == "jax":
@@ -643,7 +652,7 @@ class KerasDRCircuitLayer(keras.layers.Layer):
             )
         
         x = ops.expand_dims(keras.random.uniform(shape=self._circuit_input_shape), 0)
-        qml.draw_mpl(self.circuit,**kwargs)(self.layer_weights.numpy(), x)
+        qml.draw_mpl(self.circuit,**kwargs)(keras.ops.convert_to_numpy(self.layer_weights), x)
 
     def get_config(self):
         """Create layer config for layer saving."""
