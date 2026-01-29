@@ -133,10 +133,11 @@ def test_model_prediction_range():
         # Test with various inputs
         test_inputs = np.array([[-10.0], [-1.0], [0.0], [1.0], [10.0]])
         predictions = model(test_inputs)
+        predictions_np = keras.ops.convert_to_numpy(predictions)
         
         # Expectation values should be in [-1, 1]
-        assert np.all(predictions >= -1.0), f"Found predictions < -1: {predictions.min()}"
-        assert np.all(predictions <= 1.0), f"Found predictions > 1: {predictions.max()}"
+        assert np.all(predictions_np >= -1.0), f"Found predictions < -1: {predictions_np.min()}"
+        assert np.all(predictions_np <= 1.0), f"Found predictions > 1: {predictions_np.max()}"
         
     except ImportError:
         pytest.skip("Required dependencies not installed")
@@ -185,7 +186,7 @@ def test_gradient_flow():
         )
         
         # Get initial weights
-        initial_weights = [w.numpy().copy() for w in model.trainable_weights]
+        initial_weights = [keras.ops.convert_to_numpy(w).copy() for w in model.trainable_weights]
         
         # Train on a single sample
         x = np.array([[1.0]])
@@ -193,7 +194,7 @@ def test_gradient_flow():
         model.fit(x, y, epochs=1, verbose=0)
         
         # Get updated weights
-        updated_weights = [w.numpy() for w in model.trainable_weights]
+        updated_weights = [keras.ops.convert_to_numpy(w) for w in model.trainable_weights]
         
         # Check that at least one weight has changed
         weights_changed = any(

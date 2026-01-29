@@ -147,7 +147,7 @@ def test_generic_layer_save_load(tmp_path):
     
     # Run once to build
     x = np.zeros((1, 1))
-    pred_before = np.array(model(x))
+    pred_before = keras.ops.convert_to_numpy(model(x))
     
     # Save
     model_path = tmp_path / "generic_model.keras"
@@ -172,7 +172,7 @@ def test_generic_layer_save_load(tmp_path):
     found_layer.set_qnode(circuit)
     
     # Verify weights are preserved (approx) or at least output is same
-    pred_after = np.array(loaded_model(x))
+    pred_after = keras.ops.convert_to_numpy(loaded_model(x))
     
     np.testing.assert_allclose(pred_before, pred_after, atol=1e-5)
 

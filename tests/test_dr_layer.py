@@ -2,6 +2,7 @@
 
 import pytest
 import numpy as np
+import keras
 
 
 def test_pennylanekeras_layer_import():
@@ -107,13 +108,14 @@ def test_pennylanekeras_layer_forward_pass():
         
         # Forward pass
         predictions = model(x)
+        predictions_np = keras.ops.convert_to_numpy(predictions)
         
         assert predictions is not None
         assert predictions.shape == (3, 1)  # (batch_size, num_wires)
         
         # Check that predictions are in valid range for expectation values
-        assert np.all(predictions >= -1.0)
-        assert np.all(predictions <= 1.0)
+        assert np.all(predictions_np >= -1.0)
+        assert np.all(predictions_np <= 1.0)
     except ImportError:
         pytest.skip("Required dependencies not installed")
 

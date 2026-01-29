@@ -2,6 +2,7 @@
 
 import pytest
 import numpy as np
+import keras
 
 
 @pytest.mark.parametrize("layers", [1, 2, 3, 5])
@@ -104,11 +105,12 @@ def test_extreme_input_values():
         ])
         
         predictions = model(extreme_values)
+        predictions_np = keras.ops.convert_to_numpy(predictions)
         
         # Should still produce valid expectation values
-        assert np.all(predictions >= -1.0)
-        assert np.all(predictions <= 1.0)
-        assert not np.any(np.isnan(predictions))
+        assert np.all(predictions_np >= -1.0)
+        assert np.all(predictions_np <= 1.0)
+        assert not np.any(np.isnan(predictions_np))
         
     except ImportError:
         pytest.skip("Required dependencies not installed")
@@ -129,10 +131,11 @@ def test_zero_input():
         # Test with zero input
         x = np.zeros((5, 1))
         predictions = model(x)
+        predictions_np = keras.ops.convert_to_numpy(predictions)
         
         assert predictions is not None
         assert predictions.shape == (5, 1)
-        assert not np.any(np.isnan(predictions))
+        assert not np.any(np.isnan(predictions_np))
         
     except ImportError:
         pytest.skip("Required dependencies not installed")
@@ -159,7 +162,7 @@ def test_reproducibility_with_seed():
         
         # Get predictions
         x = np.array([[1.0], [2.0], [3.0]])
-        pred1 = np.array(model1(x))
+        pred1 = keras.ops.convert_to_numpy(model1(x))
         
         # Reset seed and create second model
         np.random.seed(42)
@@ -171,7 +174,7 @@ def test_reproducibility_with_seed():
         model2 = keras.models.Model(inputs=inp2, outputs=out2)
         
         # Get predictions
-        pred2 = np.array(model2(x))
+        pred2 = keras.ops.convert_to_numpy(model2(x))
         
         # Results should be identical
         np.testing.assert_array_almost_equal(pred1, pred2, decimal=10)
@@ -204,11 +207,11 @@ def test_multiple_calls_to_build():
         
         # Build once
         layer.build(input_shape=(None, 1))
-        weights1 = layer.layer_weights.numpy().copy()
+        weights1 = keras.ops.convert_to_numpy(layer.layer_weights).copy()
         
         # Build again with same shape should not change weights
         layer.build(input_shape=(None, 1))
-        weights2 = layer.layer_weights.numpy().copy()
+        weights2 = keras.ops.convert_to_numpy(layer.layer_weights).copy()
         
         # Weights should be the same (not reinitialized)
         np.testing.assert_array_equal(weights1, weights2)
