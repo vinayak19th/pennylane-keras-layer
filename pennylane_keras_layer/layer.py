@@ -350,15 +350,6 @@ class KerasCircuitLayer(keras.layers.Layer):
         The inputs are passed as the last positional argument to the QNode,
         after the weights (which are unpacked from the dictionary in order).
         """
-        # Check for TF graph mode
-        if keras.config.backend() == "tensorflow":
-             import tensorflow as tf
-             if not tf.executing_eagerly():
-                 raise RuntimeError(
-                     "KerasCircuitLayer does not support TensorFlow graph mode (e.g. inside @tf.function) "
-                     "directly. Please use Eager execution or the 'tf' interface in PennyLane."
-                 )
-
         # Prepare arguments
         # We pass weights as positional arguments in the order of keys in weight_shapes
         # User requested "inputs last", so we append inputs at the end.

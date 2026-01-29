@@ -91,7 +91,7 @@ def test_generic_layer_training():
     """Test that KerasCircuitLayer can be trained in a Keras model."""
     if keras.config.backend() == "tensorflow":
         import tensorflow as tf
-        if not keras.config.run_eagerly() and not tf.executing_eagerly():
+        if not tf.executing_eagerly():
             pytest.skip("Test requires eager execution for now")
 
     n_wires = 1
@@ -113,7 +113,7 @@ def test_generic_layer_training():
     model = keras.models.Model(inputs=inp, outputs=out)
     
     # Compile
-    model.compile(optimizer=keras.optimizers.Adam(0.1), loss='mse')
+    model.compile(optimizer=keras.optimizers.Adam(0.1), loss='mse', run_eagerly=(keras.config.backend() == "tensorflow"))
     
     # Train on dummy data: input 0 -> output -1 (requires identity rotation if initialized near identity)
     # Actually, let's just check loss decreases or runs.
