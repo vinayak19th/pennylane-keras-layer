@@ -1,3 +1,5 @@
+![Logo](images/KerasCircuitLogo.png)
+
 # PennyLane Keras Layer
 
 A library to introduce Keras 3 support to PennyLane with full support for multi-backend training.
