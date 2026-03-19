@@ -106,13 +106,14 @@ model = keras.Sequential([
 
 Comprehensive documentation is available in the [`docs/`](docs/) directory:
 
-- **[Getting Started](docs/getting_started.md)**: Installation and setup guide
-- **[User Guide](docs/user_guide.md)**: In-depth concepts and best practices
-- **[API Reference](docs/api_reference.md)**: Detailed API documentation
-- **[Tutorials](docs/tutorials.md)**: Step-by-step tutorials for different backends
-- **[Examples](docs/examples.md)**: Complete working examples
-- **[FAQ](docs/faq.md)**: Frequently asked questions
-- **[Contributing](docs/contributing.md)**: How to contribute to the project
+- **[Getting Started](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/docs/getting_started.md)**: Installation and setup guide
+- **[User Guide](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/docs/user_guide.md)**: In-depth concepts and best practices
+- **[API Reference](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/docs/api_reference.md)**: Detailed API documentation
+- **[Tutorials](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/docs/tutorials.md)**: Step-by-step tutorials for different backends
+- **[Examples](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/docs/examples.md)**: Complete working examples
+- **[FAQ](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/docs/faq.md)**: Frequently asked questions
+- **[Contributing](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/docs/contributing.md)**: How to contribute to the project
+
 
 ## Examples
 
@@ -154,7 +155,7 @@ pytest tests/ --backend=tensorflow  # or torch, or jax
 - PyTorch: `pytest tests/ --backend=torch` (requires `pip install torch`)
 - JAX: `pytest tests/ --backend=jax` (requires `pip install jax jaxlib`)
 
-See [tests/README.md](tests/README.md) for detailed information about the test suite.
+See [tests/README.md](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/tests/README.md) for detailed information about the test suite.
 
 ### Code formatting
 
@@ -170,7 +171,7 @@ flake8 pennylane_keras_layer/ tests/
 
 ## Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](docs/contributing.md) for:
+Contributions are welcome! Please see our [Contributing Guide](https://github.com/vinayak19th/pennylane-keras-layer/blob/main/docs/contributing.md) for:
 
 - How to report bugs
 - How to suggest features
