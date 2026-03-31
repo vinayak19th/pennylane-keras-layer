@@ -12,12 +12,13 @@ This package provides integration between PennyLane (a quantum computing framewo
 
 ### Key Features
 
-- **🔄 Multi-Backend Support**: Works seamlessly with JAX, TensorFlow, and PyTorch
-- **🎯 Easy Integration**: Drop-in replacement for standard Keras layers  
-- **⚡ High Performance**: JIT compilation support with JAX backend
-- **💾 Serialization**: Full support for model saving and loading
-- **🔧 Flexible Configuration**: Customizable quantum circuit parameters
-- **📊 Data Re-Uploading**: Implements powerful quantum ML paradigm
+- **Multi-Backend Support**: Works seamlessly with JAX, TensorFlow, and PyTorch
+- **Easy Integration**: Drop-in replacement for standard Keras layers  
+- **High Performance**: JIT compilation support with JAX backend
+- **Serialization**: Full support for model saving and loading
+- **Flexible Configuration**: Customizable quantum circuit parameters
+- **Keras-Native Experience**: Use standard `model.fit()`, `model.save()`, and high-level APIs.
+- **Unified API**: One layer for all your deep learning research needs.
 
 ## Installation
 
@@ -43,6 +44,15 @@ pip install -e ".[dev]"
 - PennyLane >= 0.30.0
 - Keras >= 3.0.0
 - NumPy >= 1.21.0
+
+## Hardware 
+Works on all devices supported by PennyLane, JAX or PyTorch provided the backend is correctly setup. This includes:
+- All CPUs (Including Apple Silicon)
+- Nvidia GPUs (CUDA)
+- AMD GPUs
+- Intel ARC 
+
+> Note: Apple Silicon support is limited to CPU backend due to missing support for float64 and complex32 dtype in jax-metal and pytorch-mps.
 
 ## Quick Start
 
